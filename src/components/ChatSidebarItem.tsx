@@ -41,7 +41,7 @@ export default function ChatSidebarItem({
 
   return (
     <div
-      className={`group flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-all duration-300 hover:bg-foreground/5 ${
+      className={`group flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-all duration-300 hover:bg-foreground/10 ${
         isSelected ? "bg-foreground/10" : ""
       }`}
       onClick={onClick}

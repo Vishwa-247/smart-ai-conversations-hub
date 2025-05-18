@@ -1,6 +1,6 @@
 
 import { useEffect, useRef } from 'react';
-import { Check, MoonIcon, SunIcon, Leaf, Waves, Laptop } from 'lucide-react';
+import { Check, MoonIcon, SunIcon, Leaf } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/contexts/ThemeContext';
 import gsap from 'gsap';
@@ -14,9 +14,7 @@ import {
 const themes = [
   { value: 'dark', label: 'Dark', icon: MoonIcon },
   { value: 'light', label: 'Light', icon: SunIcon },
-  { value: 'cyberpunk', label: 'Cyberpunk', icon: Laptop },
-  { value: 'forest', label: 'Forest', icon: Leaf },
-  { value: 'ocean', label: 'Ocean', icon: Waves }
+  { value: 'forest', label: 'Forest', icon: Leaf }
 ];
 
 export default function ThemeSelector() {
@@ -55,7 +53,7 @@ export default function ThemeSelector() {
           return (
             <DropdownMenuItem
               key={themeOption.value}
-              onClick={() => setTheme(themeOption.value as 'dark' | 'light' | 'cyberpunk' | 'forest' | 'ocean')}
+              onClick={() => setTheme(themeOption.value as 'dark' | 'light' | 'forest')}
               className={`flex items-center gap-2 py-2 px-3 cursor-pointer rounded-lg transition-all duration-300 ${
                 theme === themeOption.value ? 'bg-foreground/10' : 'hover:bg-foreground/5'
               }`}

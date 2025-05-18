@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
-type ThemeType = 'dark' | 'light' | 'cyberpunk' | 'forest' | 'ocean';
+type ThemeType = 'dark' | 'light' | 'forest';
 
 interface ThemeContextType {
   theme: ThemeType;
@@ -17,7 +17,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const storedTheme = localStorage.getItem('theme') as ThemeType | null;
     
     // Check for stored theme or system preference
-    if (storedTheme && ['dark', 'light', 'cyberpunk', 'forest', 'ocean'].includes(storedTheme)) {
+    if (storedTheme && ['dark', 'light', 'forest'].includes(storedTheme)) {
       setTheme(storedTheme);
     } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
       setTheme('dark');
@@ -28,7 +28,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     // Update the data theme attribute and store in localStorage
     const root = window.document.documentElement;
     
-    root.classList.remove('light', 'dark', 'cyberpunk', 'forest', 'ocean');
+    root.classList.remove('light', 'dark', 'forest', 'cyberpunk', 'ocean');
     root.classList.add(theme);
     localStorage.setItem('theme', theme);
     
@@ -39,25 +39,21 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.style.setProperty('--card', '0 0% 100%');
       root.style.setProperty('--popover', '0 0% 100%');
       root.style.setProperty('--sidebar-accent', '0 0% 96%');
-    } else {
-      // Set different variables for different themes
-      if (theme === 'dark') {
-        // True black for dark mode instead of blue-ish dark
-        root.style.setProperty('--foreground', '210 40% 98%');
-        root.style.setProperty('--background', '0 0% 7%');
-        root.style.setProperty('--sidebar-background', '0 0% 5%');
-        root.style.setProperty('--card', '0 0% 9%');
-        root.style.setProperty('--popover', '0 0% 9%');
-      } else if (theme === 'forest') {
-        // Improve forest theme for better text contrast
-        root.style.setProperty('--foreground', '0 0% 95%');
-      } else if (theme === 'ocean') {
-        // Improve ocean theme for better text contrast
-        root.style.setProperty('--foreground', '0 0% 95%');
-      } else if (theme === 'cyberpunk') {
-        // Improve cyberpunk theme for better text contrast
-        root.style.setProperty('--foreground', '0 0% 95%');
-      }
+      root.style.setProperty('--sidebar-background', '0 0% 98%');
+    } else if (theme === 'dark') {
+      // True black for dark mode
+      root.style.setProperty('--foreground', '210 40% 98%');
+      root.style.setProperty('--background', '0 0% 7%');
+      root.style.setProperty('--sidebar-background', '0 0% 5%');
+      root.style.setProperty('--card', '0 0% 9%');
+      root.style.setProperty('--popover', '0 0% 9%');
+    } else if (theme === 'forest') {
+      // Improve forest theme for better text contrast
+      root.style.setProperty('--foreground', '0 0% 95%');
+      root.style.setProperty('--background', '150 30% 10%');
+      root.style.setProperty('--sidebar-background', '150 30% 8%');
+      root.style.setProperty('--card', '150 30% 12%');
+      root.style.setProperty('--popover', '150 30% 12%');
     }
   }, [theme]);
 
