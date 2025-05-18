@@ -43,21 +43,21 @@ export default function ThemeSelector() {
           ref={buttonRef}
           variant="ghost" 
           size="icon"
-          className="rounded-full h-8 w-8 hover:bg-accent/30"
+          className="rounded-full h-8 w-8 hover:bg-accent/10 transition-all duration-200"
         >
           <Icon className="h-[1.1rem] w-[1.1rem] text-foreground" />
           <span className="sr-only">Change theme</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-40 rounded-lg overflow-hidden">
+      <DropdownMenuContent align="end" className="w-40 rounded-xl overflow-hidden shadow-lg border border-border/40 bg-popover">
         {themes.map((themeOption) => {
           const ThemeIcon = themeOption.icon;
           return (
             <DropdownMenuItem
               key={themeOption.value}
               onClick={() => setTheme(themeOption.value as 'dark' | 'light' | 'cyberpunk' | 'forest' | 'ocean')}
-              className={`flex items-center gap-2 py-2 px-3 cursor-pointer rounded-md ${
-                theme === themeOption.value ? 'bg-accent/25' : ''
+              className={`flex items-center gap-2 py-2 px-3 cursor-pointer rounded-lg transition-all duration-200 ${
+                theme === themeOption.value ? 'bg-accent/15' : 'hover:bg-accent/10'
               }`}
             >
               <ThemeIcon className="h-4 w-4" />

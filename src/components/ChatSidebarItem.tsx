@@ -41,8 +41,8 @@ export default function ChatSidebarItem({
 
   return (
     <div
-      className={`group flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent ${
-        isSelected ? "bg-accent" : ""
+      className={`group flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-all duration-200 hover:bg-accent/10 ${
+        isSelected ? "bg-accent/15" : ""
       }`}
       onClick={onClick}
     >
@@ -61,7 +61,7 @@ export default function ChatSidebarItem({
       </div>
       <button
         onClick={handleDeleteClick}
-        className="opacity-0 group-hover:opacity-100 transition-opacity"
+        className="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
         aria-label="Delete chat"
       >
         <Trash className="h-4 w-4 text-muted-foreground hover:text-destructive" />

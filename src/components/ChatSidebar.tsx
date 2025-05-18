@@ -44,12 +44,12 @@ export default function ChatSidebar() {
   return (
     <div
       ref={sidebarRef}
-      className="w-64 border-r h-screen flex flex-col bg-sidebar text-sidebar-foreground rounded-r-md overflow-hidden"
+      className="w-64 border-r h-screen flex flex-col bg-sidebar text-sidebar-foreground rounded-r-xl overflow-hidden border-sidebar-border/30"
     >
       <div className="p-3">
         <Button 
           onClick={handleCreateChat} 
-          className="w-full flex items-center justify-center gap-2 animate-fade-in rounded-xl py-3 border border-sidebar-border/30 bg-sidebar-accent/30 hover:bg-sidebar-accent transition-all"
+          className="w-full flex items-center justify-center gap-2 animate-fade-in rounded-xl py-3 border border-sidebar-border/30 bg-sidebar-accent/20 hover:bg-sidebar-accent/30 transition-all duration-200"
           variant="outline"
         >
           <PlusCircle className="h-4 w-4" />
@@ -83,7 +83,7 @@ export default function ChatSidebar() {
         </div>
       </div>
       
-      <div className="p-3 border-t flex items-center justify-between bg-sidebar-accent/5">
+      <div className="p-3 border-t flex items-center justify-between bg-sidebar-accent/5 border-sidebar-border/30 rounded-b-xl">
         <div className="text-xs font-medium text-sidebar-foreground/60">© 2025 AI Chat Assistant</div>
         <ThemeSelector />
       </div>

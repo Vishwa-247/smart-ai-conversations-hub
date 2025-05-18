@@ -55,7 +55,7 @@ const models: ModelOption[] = [
 ];
 
 export default function ModelSelector() {
-  const { currentModel, setCurrentModel, currentChatId, chats, createChat } = useChat();
+  const { currentModel, setCurrentModel, createChat } = useChat();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -84,7 +84,7 @@ export default function ModelSelector() {
     <div ref={containerRef} className="transition-all duration-300">
       <DropdownMenu open={open} onOpenChange={setOpen}>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="flex justify-between items-center w-full gap-2 h-10">
+          <Button variant="outline" className="flex justify-between items-center w-full gap-2 h-10 rounded-xl hover:bg-accent/10 transition-all duration-200 border border-border/40">
             <div className="flex items-center gap-2">
               <span className="flex-shrink-0">{selectedModel.icon}</span>
               <span className="truncate">{selectedModel.label}</span>
@@ -93,14 +93,14 @@ export default function ModelSelector() {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent
-          className="w-[250px] animate-fade-in"
+          className="w-[250px] animate-fade-in rounded-xl overflow-hidden shadow-lg border border-border/40 bg-popover"
           align="end"
           sideOffset={8}
         >
           {models.map((model) => (
             <DropdownMenuItem
               key={model.value}
-              className="flex items-center justify-between py-2 cursor-pointer"
+              className="flex items-center justify-between py-2 cursor-pointer rounded-lg transition-all duration-200 hover:bg-accent/10"
               onClick={() => handleSelectModel(model.value)}
             >
               <div className="flex items-center gap-2">
