@@ -84,7 +84,10 @@ export default function ModelSelector() {
     <div ref={containerRef} className="transition-all duration-300">
       <DropdownMenu open={open} onOpenChange={setOpen}>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="flex justify-between items-center w-full gap-2 h-10 rounded-xl hover:bg-foreground/5 transition-all duration-300 border border-border/40">
+          <Button 
+            variant="outline" 
+            className="flex justify-between items-center w-full gap-2 h-10 rounded-xl hover:bg-foreground/5 transition-all duration-300 border border-border/40 model-selector-button"
+          >
             <div className="flex items-center gap-2">
               <span className="flex-shrink-0">{selectedModel.icon}</span>
               <span className="truncate">{selectedModel.label}</span>
@@ -100,7 +103,7 @@ export default function ModelSelector() {
           {models.map((model) => (
             <DropdownMenuItem
               key={model.value}
-              className="flex items-center justify-between py-2 cursor-pointer rounded-lg transition-all duration-300 hover:bg-foreground/5"
+              className="flex items-center justify-between py-2 cursor-pointer rounded-lg transition-all duration-300 hover:bg-foreground/5 dropdown-item-highlight"
               onClick={() => handleSelectModel(model.value)}
             >
               <div className="flex items-center gap-2">

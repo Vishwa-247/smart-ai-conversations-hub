@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 // Define our models
 export type ModelType = 'gpt-4o' | 'gpt-4o-mini' | 'claude-3-sonnet' | 'gemini-pro' | 'grok-1';
@@ -111,6 +111,13 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       }
     }
   };
+
+  // Create a default chat when the app loads
+  useEffect(() => {
+    if (chats.length === 0) {
+      createChat(currentModel);
+    }
+  }, []);
 
   const value = {
     chats,

@@ -72,3 +72,13 @@ button,
 [role="dialog"] {
   @apply rounded-xl overflow-hidden;
 }
+
+/* Light mode model selector background */
+.light .model-selector-button {
+  @apply bg-white shadow-sm;
+}
+
+/* Light mode dropdown item highlight */
+.light .dropdown-item-highlight {
+  @apply bg-slate-50 hover:bg-slate-100;
+}
