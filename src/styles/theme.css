@@ -1,0 +1,146 @@
+
+@tailwind base;
+
+@layer base {
+  /* Light Theme */
+  .light {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 252 75% 66%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 262 83% 58%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 199 91% 61%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 252 75% 66%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 222.2 84% 4.9%;
+    --sidebar-primary: 252 75% 66%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 210 40% 96.1%;
+    --sidebar-accent-foreground: 222.2 47.4% 11.2%;
+    --sidebar-border: 214.3 31.8% 91.4%;
+    --sidebar-ring: 252 75% 66%;
+  }
+
+  /* Dark Theme - True black */
+  .dark {
+    --background: 0 0% 5%;
+    --foreground: 210 40% 98%;
+
+    --card: 0 0% 7%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 0 0% 7%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 252 75% 66%;
+    --primary-foreground: 0 0% 5%;
+
+    --secondary: 262 83% 58%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 0 0% 15%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 199 91% 61%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 252 75% 66%;
+    
+    --sidebar-background: 0 0% 3%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 252 75% 66%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 0 0% 15%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 0 0% 20%;
+    --sidebar-ring: 252 75% 66%;
+  }
+
+  /* Forest Theme */
+  .forest {
+    --background: 150 30% 10%;
+    --foreground: 0 0% 95%;
+
+    --card: 150 30% 12%;
+    --card-foreground: 0 0% 95%;
+
+    --popover: 150 30% 12%;
+    --popover-foreground: 0 0% 95%;
+
+    --primary: 130 50% 50%;
+    --primary-foreground: 150 30% 10%;
+
+    --secondary: 160 50% 40%;
+    --secondary-foreground: 0 0% 95%;
+
+    --muted: 150 30% 15%;
+    --muted-foreground: 150 20% 75%;
+
+    --accent: 130 50% 50%;
+    --accent-foreground: 0 0% 95%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 95%;
+
+    --border: 150 30% 18%;
+    --input: 150 30% 18%;
+    --ring: 130 50% 50%;
+    
+    --sidebar-background: 150 30% 8%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 130 50% 50%;
+    --sidebar-primary-foreground: 150 30% 10%;
+    --sidebar-accent: 150 30% 15%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 150 30% 18%;
+    --sidebar-ring: 130 50% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Theme transition effect */
+html {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Make sure text elements are always visible regardless of theme */
+h1, h2, h3, h4, h5, h6, p, span, div, button {
+  transition: color 0.3s ease;
+}
