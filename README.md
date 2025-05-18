@@ -1,73 +1,145 @@
-# Welcome to your Lovable project
 
-## Project info
+# AI Chat Application
 
-**URL**: https://lovable.dev/projects/6774f85b-e4d5-48bb-99d5-bb7042e46d59
+A modern chat application that allows users to interact with various AI language models through a clean, responsive interface.
 
-## How can I edit this code?
+## Features
 
-There are several ways of editing your application.
+- **Multiple AI Models**: Support for GPT-4o, Claude, Gemini, and Grok models
+- **Responsive UI**: Works on desktop and mobile devices
+- **Theme Support**: Light and dark mode with smooth transitions
+- **Chat History**: View and manage previous conversations
+- **Smooth Animations**: Powered by GSAP for a polished user experience
+- **Containerized**: Docker and Kubernetes support for easy deployment
 
-**Use Lovable**
+## Technology Stack
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/6774f85b-e4d5-48bb-99d5-bb7042e46d59) and start prompting.
+### Frontend
+- React 18 with TypeScript
+- Vite for fast builds
+- TailwindCSS for styling
+- GSAP for animations
+- React Query for data fetching
+- React Markdown for message formatting
 
-Changes made via Lovable will be committed automatically to this repo.
+### Build & Deployment
+- Docker for containerization
+- Kubernetes for orchestration
+- Nginx for static file serving
 
-**Use your preferred IDE**
+## Running Locally
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+```bash
+# Install dependencies
+npm install
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## Docker Deployment
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Why Docker?
 
-**Use GitHub Codespaces**
+Docker provides a consistent environment for running the application across different systems. It packages all dependencies, configurations, and the application itself into a container that runs the same way regardless of where it's deployed.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Building and Running with Docker
 
-## What technologies are used for this project?
+```bash
+# Build the Docker image
+docker build -t ai-chat-app .
 
-This project is built with:
+# Run the container
+docker run -p 8080:80 ai-chat-app
+```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### Using Docker Compose
 
-## How can I deploy this project?
+For a more complete setup (when the backend is implemented):
 
-Simply open [Lovable](https://lovable.dev/projects/6774f85b-e4d5-48bb-99d5-bb7042e46d59) and click on Share -> Publish.
+```bash
+# Start all services
+docker-compose up -d
 
-## Can I connect a custom domain to my Lovable project?
+# View logs
+docker-compose logs -f
 
-Yes, you can!
+# Stop all services
+docker-compose down
+```
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## Kubernetes Deployment
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+### Why Kubernetes?
+
+Kubernetes enables scalable, reliable deployments with features like:
+- **Horizontal scaling**: Automatically add more instances during high load
+- **Self-healing**: Restart containers that fail or become unresponsive
+- **Rolling updates**: Update the application without downtime
+
+### Deploying to Kubernetes
+
+```bash
+# Apply the Kubernetes configuration
+kubectl apply -f kubernetes.yaml
+
+# Check deployment status
+kubectl get deployments
+
+# Check pods
+kubectl get pods
+
+# Check services
+kubectl get services
+```
+
+### What Happens After Kubernetes Deployment?
+
+1. **Pods Creation**: Kubernetes creates pods according to your deployment specifications
+2. **Service Exposure**: The service makes your pods accessible within the cluster
+3. **Ingress Configuration**: The ingress controller routes external traffic to your service
+4. **Scaling**: Kubernetes handles scaling based on load or your configuration
+5. **Health Monitoring**: Kubernetes monitors container health and restarts failed containers
+
+### Accessing Your Deployed App
+
+Once deployed, the application will be available at the hostname specified in your ingress configuration.
+
+For local testing with minikube:
+
+```bash
+# Enable ingress addon
+minikube addons enable ingress
+
+# Get minikube IP
+minikube ip
+
+# Add hosts entry (replace with your minikube IP)
+# 192.168.49.2 chat-app.example.com
+
+# Access the app at http://chat-app.example.com
+```
+
+## Project Structure
+
+```
+├── src/
+│   ├── components/       # React components
+│   ├── contexts/         # Context providers
+│   ├── hooks/            # Custom React hooks
+│   ├── services/         # API services
+│   ├── pages/            # Application pages
+│   └── lib/              # Utility functions
+├── Dockerfile            # Docker configuration
+├── docker-compose.yml    # Multi-container Docker config
+├── kubernetes.yaml       # Kubernetes deployment config
+└── nginx.conf            # Nginx server configuration
+```
+
+## Future Enhancements
+
+- Backend implementation with Flask and MongoDB
+- User authentication and saved preferences
+- Custom system prompts for each AI model
+- File upload capabilities
+- Voice input/output support
