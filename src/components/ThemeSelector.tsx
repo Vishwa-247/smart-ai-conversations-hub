@@ -55,7 +55,7 @@ export default function ThemeSelector() {
           return (
             <DropdownMenuItem
               key={themeOption.value}
-              onClick={() => setTheme(themeOption.value)}
+              onClick={() => setTheme(themeOption.value as 'dark' | 'light' | 'cyberpunk' | 'forest' | 'ocean')}
               className={`flex items-center gap-2 py-2 px-3 cursor-pointer rounded-md ${
                 theme === themeOption.value ? 'bg-accent/25' : ''
               }`}
