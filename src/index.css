@@ -4,7 +4,8 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
+  /* Light Theme */
+  .light {
     --background: 210 40% 98%;
     --foreground: 222.2 84% 4.9%;
 
@@ -45,6 +46,7 @@
     --sidebar-ring: 252 75% 66%;
   }
 
+  /* Dark Theme */
   .dark {
     --background: 222.2 47.4% 11.2%;
     --foreground: 210 40% 98%;
@@ -82,6 +84,126 @@
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 217.2 32.6% 17.5%;
     --sidebar-ring: 252 75% 66%;
+  }
+
+  /* Cyberpunk Theme */
+  .cyberpunk {
+    --background: 230 47% 10%;
+    --foreground: 210 40% 98%;
+
+    --card: 230 47% 12%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 230 47% 12%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 326 100% 70%;
+    --primary-foreground: 230 47% 10%;
+
+    --secondary: 190 98% 70%;
+    --secondary-foreground: 230 47% 10%;
+
+    --muted: 230 47% 15%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 326 100% 70%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 230 47% 18%;
+    --input: 230 47% 18%;
+    --ring: 326 100% 70%;
+    
+    --sidebar-background: 230 47% 8%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 326 100% 70%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 230 47% 15%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 230 47% 18%;
+    --sidebar-ring: 326 100% 70%;
+  }
+
+  /* Forest Theme */
+  .forest {
+    --background: 150 30% 10%;
+    --foreground: 150 20% 98%;
+
+    --card: 150 30% 12%;
+    --card-foreground: 150 20% 98%;
+
+    --popover: 150 30% 12%;
+    --popover-foreground: 150 20% 98%;
+
+    --primary: 130 50% 50%;
+    --primary-foreground: 150 30% 10%;
+
+    --secondary: 160 50% 40%;
+    --secondary-foreground: 150 20% 98%;
+
+    --muted: 150 30% 15%;
+    --muted-foreground: 150 20% 65%;
+
+    --accent: 130 50% 50%;
+    --accent-foreground: 150 20% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 150 20% 98%;
+
+    --border: 150 30% 18%;
+    --input: 150 30% 18%;
+    --ring: 130 50% 50%;
+    
+    --sidebar-background: 150 30% 8%;
+    --sidebar-foreground: 150 20% 98%;
+    --sidebar-primary: 130 50% 50%;
+    --sidebar-primary-foreground: 150 30% 10%;
+    --sidebar-accent: 150 30% 15%;
+    --sidebar-accent-foreground: 150 20% 98%;
+    --sidebar-border: 150 30% 18%;
+    --sidebar-ring: 130 50% 50%;
+  }
+
+  /* Ocean Theme */
+  .ocean {
+    --background: 220 50% 10%;
+    --foreground: 210 40% 98%;
+
+    --card: 220 50% 12%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 220 50% 12%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 200 100% 60%;
+    --primary-foreground: 220 50% 10%;
+
+    --secondary: 190 90% 50%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 220 50% 15%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 200 100% 60%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 220 50% 18%;
+    --input: 220 50% 18%;
+    --ring: 200 100% 60%;
+    
+    --sidebar-background: 220 50% 8%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 200 100% 60%;
+    --sidebar-primary-foreground: 220 50% 10%;
+    --sidebar-accent: 220 50% 15%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 220 50% 18%;
+    --sidebar-ring: 200 100% 60%;
   }
 }
 
@@ -123,4 +245,75 @@
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background-color: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* Theme transition effect */
+html {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Model-specific message styles */
+.message-gpt-4o, .message-gpt-4o-mini {
+  @apply border-l-4 border-green-500/30;
+}
+
+.message-claude-3-sonnet {
+  @apply border-l-4 border-purple-500/30;
+}
+
+.message-gemini-pro {
+  @apply border-l-4 border-blue-500/30;
+}
+
+.message-grok-1 {
+  @apply border-l-4 border-red-500/30;
+}
+
+/* Theme-specific animations */
+.cyberpunk .btn-primary {
+  @apply animate-pulse;
+}
+
+/* Enhanced animation classes */
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.2s ease-out forwards;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.3s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
 }

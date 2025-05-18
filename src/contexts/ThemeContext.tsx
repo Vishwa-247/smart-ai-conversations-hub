@@ -1,24 +1,23 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
-type Theme = 'dark' | 'light';
+type ThemeType = 'dark' | 'light' | 'cyberpunk' | 'forest' | 'ocean';
 
 interface ThemeContextType {
-  theme: Theme;
-  setTheme: (theme: Theme) => void;
-  toggleTheme: () => void;
+  theme: ThemeType;
+  setTheme: (theme: ThemeType) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>('light');
+  const [theme, setTheme] = useState<ThemeType>('dark');
 
   useEffect(() => {
-    const storedTheme = localStorage.getItem('theme') as Theme | null;
+    const storedTheme = localStorage.getItem('theme') as ThemeType | null;
     
     // Check for stored theme or system preference
-    if (storedTheme) {
+    if (storedTheme && ['dark', 'light', 'cyberpunk', 'forest', 'ocean'].includes(storedTheme)) {
       setTheme(storedTheme);
     } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
       setTheme('dark');
@@ -26,20 +25,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Update the class on the html element and store in localStorage
+    // Update the data theme attribute and store in localStorage
     const root = window.document.documentElement;
     
-    root.classList.remove('light', 'dark');
+    root.classList.remove('light', 'dark', 'cyberpunk', 'forest', 'ocean');
     root.classList.add(theme);
     localStorage.setItem('theme', theme);
   }, [theme]);
 
-  const toggleTheme = () => {
-    setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));
-  };
-
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme, setTheme }}>
       {children}
     </ThemeContext.Provider>
   );
