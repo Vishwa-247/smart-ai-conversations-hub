@@ -34,13 +34,24 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     
     // Ensure text visibility based on theme
     if (theme === 'light') {
-      root.style.setProperty('--foreground-contrast-fix', 'hsla(240, 10%, 3.9%, 1)');
+      root.style.setProperty('--foreground', '222.2 84% 4.9%');
+      root.style.setProperty('--background', '0 0% 100%');
     } else {
-      root.style.setProperty('--foreground-contrast-fix', 'hsla(0, 0%, 98%, 1)');
+      root.style.setProperty('--foreground', '210 40% 98%');
+      root.style.setProperty('--background', '222.2 47.4% 11.2%');
     }
     
-    // Log for debugging
-    console.log(`Theme changed to: ${theme}`);
+    // Set different variables for different themes
+    if (theme === 'dark') {
+      // True black for dark mode instead of blue-ish
+      root.style.setProperty('--background', '0 0% 10%');
+    } else if (theme === 'forest') {
+      // Improve forest theme for better text contrast
+      root.style.setProperty('--foreground', '0 0% 95%');
+    } else if (theme === 'ocean') {
+      // Improve ocean theme for better text contrast
+      root.style.setProperty('--foreground', '0 0% 95%');
+    }
   }, [theme]);
 
   return (

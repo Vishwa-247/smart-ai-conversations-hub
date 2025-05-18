@@ -1,6 +1,6 @@
 
 import { useEffect, useRef } from 'react';
-import { Check, MoonIcon, SunIcon, Laptop, Leaf, Waves } from 'lucide-react';
+import { Check, MoonIcon, SunIcon, Leaf, Waves, Laptop } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/contexts/ThemeContext';
 import gsap from 'gsap';
@@ -11,44 +11,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-interface ThemeOption {
-  value: 'dark' | 'light' | 'cyberpunk' | 'forest' | 'ocean';
-  label: string;
-  icon: React.ElementType;
-  description: string;
-}
-
-const themes: ThemeOption[] = [
-  {
-    value: 'dark',
-    label: 'Dark',
-    icon: MoonIcon,
-    description: 'Dark background with purple accents'
-  },
-  {
-    value: 'light',
-    label: 'Light',
-    icon: SunIcon,
-    description: 'White background with purple accents'
-  },
-  {
-    value: 'cyberpunk',
-    label: 'Cyberpunk',
-    icon: Laptop,
-    description: 'Neon pink and blue accents'
-  },
-  {
-    value: 'forest',
-    label: 'Forest',
-    icon: Leaf,
-    description: 'Nature-inspired green palette'
-  },
-  {
-    value: 'ocean',
-    label: 'Ocean',
-    icon: Waves,
-    description: 'Calming blue color palette'
-  }
+const themes = [
+  { value: 'dark', label: 'Dark', icon: MoonIcon },
+  { value: 'light', label: 'Light', icon: SunIcon },
+  { value: 'cyberpunk', label: 'Cyberpunk', icon: Laptop },
+  { value: 'forest', label: 'Forest', icon: Leaf },
+  { value: 'ocean', label: 'Ocean', icon: Waves }
 ];
 
 export default function ThemeSelector() {
@@ -59,8 +27,8 @@ export default function ThemeSelector() {
     if (buttonRef.current) {
       gsap.fromTo(
         buttonRef.current,
-        { rotation: -90, opacity: 0 },
-        { rotation: 0, opacity: 1, duration: 0.5, ease: 'back.out(1.7)' }
+        { rotation: -30, opacity: 0.8 },
+        { rotation: 0, opacity: 1, duration: 0.3, ease: 'power2.out' }
       );
     }
   }, [theme]);
@@ -81,26 +49,21 @@ export default function ThemeSelector() {
           <span className="sr-only">Change theme</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56 rounded-xl overflow-hidden">
+      <DropdownMenuContent align="end" className="w-40 rounded-lg overflow-hidden">
         {themes.map((themeOption) => {
           const ThemeIcon = themeOption.icon;
           return (
             <DropdownMenuItem
               key={themeOption.value}
               onClick={() => setTheme(themeOption.value)}
-              className={`flex items-center justify-between py-2 px-3 cursor-pointer rounded-lg ${
+              className={`flex items-center gap-2 py-2 px-3 cursor-pointer rounded-md ${
                 theme === themeOption.value ? 'bg-accent/25' : ''
               }`}
             >
-              <div className="flex items-center gap-2">
-                <ThemeIcon className="h-4 w-4 text-foreground" />
-                <div>
-                  <p className="font-medium text-foreground">{themeOption.label}</p>
-                  <p className="text-xs text-foreground/70">{themeOption.description}</p>
-                </div>
-              </div>
+              <ThemeIcon className="h-4 w-4" />
+              <p className="font-medium">{themeOption.label}</p>
               {theme === themeOption.value && (
-                <Check className="h-4 w-4 text-foreground" />
+                <Check className="h-4 w-4 ml-auto" />
               )}
             </DropdownMenuItem>
           );

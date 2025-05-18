@@ -37,8 +37,8 @@ export default function ChatMessage({ message, isLastMessage }: ChatMessageProps
       ref={messageRef}
       className={`p-4 mb-3 ${
         isUser
-          ? "bg-primary/5 border border-primary/10"
-          : "bg-muted/50 border border-muted/20"
+          ? "bg-primary/10 border border-primary/10"
+          : "bg-muted/30 border border-muted/10"
       } rounded-2xl max-w-3xl mx-auto`}
     >
       <div className="flex items-center mb-2">
@@ -47,13 +47,13 @@ export default function ChatMessage({ message, isLastMessage }: ChatMessageProps
             isUser ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
           }`}
         >
-          {isUser ? "U" : "AI"}
+          {isUser ? "You" : "AI"}
         </div>
-        <div className="ml-2 font-medium text-foreground">
+        <div className="ml-2 font-medium">
           {isUser ? "You" : message.model || "Assistant"}
         </div>
       </div>
-      <div className="prose dark:prose-invert max-w-none text-foreground">
+      <div className="prose dark:prose-invert max-w-none">
         <ReactMarkdown>{message.content}</ReactMarkdown>
       </div>
     </div>

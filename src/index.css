@@ -5,7 +5,7 @@
 @layer base {
   /* Light Theme */
   .light {
-    --background: 210 40% 98%;
+    --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
 
     --card: 0 0% 100%;
@@ -14,16 +14,16 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 252 75% 66%; /* indigo */
+    --primary: 252 75% 66%;
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 262 83% 58%; /* violet */
+    --secondary: 262 83% 58%;
     --secondary-foreground: 210 40% 98%;
 
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 199 91% 61%; /* sky blue */
+    --accent: 199 91% 61%;
     --accent-foreground: 222.2 47.4% 11.2%;
 
     --destructive: 0 84.2% 60.2%;
@@ -35,7 +35,7 @@
 
     --radius: 0.75rem;
 
-    --sidebar-background: 0 0% 100%;
+    --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 222.2 84% 4.9%;
     --sidebar-primary: 252 75% 66%;
     --sidebar-primary-foreground: 210 40% 98%;
@@ -45,24 +45,24 @@
     --sidebar-ring: 252 75% 66%;
   }
 
-  /* Dark Theme */
+  /* Dark Theme - True black instead of blue-ish dark */
   .dark {
-    --background: 222.2 47.4% 11.2%;
+    --background: 0 0% 10%;
     --foreground: 210 40% 98%;
 
-    --card: 222.2 47.4% 11.2%;
+    --card: 0 0% 12%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222.2 47.4% 11.2%;
+    --popover: 0 0% 12%;
     --popover-foreground: 210 40% 98%;
 
     --primary: 252 75% 66%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary-foreground: 0 0% 10%;
 
     --secondary: 262 83% 58%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 217.2 32.6% 17.5%;
+    --muted: 0 0% 15%;
     --muted-foreground: 215 20.2% 65.1%;
 
     --accent: 199 91% 61%;
@@ -71,17 +71,17 @@
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
     --ring: 252 75% 66%;
     
-    --sidebar-background: 222.2 47.4% 15.2%;
+    --sidebar-background: 0 0% 8%;
     --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 252 75% 66%;
     --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 217.2 32.6% 17.5%;
+    --sidebar-accent: 0 0% 15%;
     --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217.2 32.6% 17.5%;
+    --sidebar-border: 0 0% 20%;
     --sidebar-ring: 252 75% 66%;
   }
 
@@ -128,39 +128,39 @@
   /* Forest Theme */
   .forest {
     --background: 150 30% 10%;
-    --foreground: 150 20% 98%;
+    --foreground: 0 0% 95%;
 
     --card: 150 30% 12%;
-    --card-foreground: 150 20% 98%;
+    --card-foreground: 0 0% 95%;
 
     --popover: 150 30% 12%;
-    --popover-foreground: 150 20% 98%;
+    --popover-foreground: 0 0% 95%;
 
     --primary: 130 50% 50%;
     --primary-foreground: 150 30% 10%;
 
     --secondary: 160 50% 40%;
-    --secondary-foreground: 150 20% 98%;
+    --secondary-foreground: 0 0% 95%;
 
     --muted: 150 30% 15%;
     --muted-foreground: 150 20% 75%;
 
     --accent: 130 50% 50%;
-    --accent-foreground: 150 20% 98%;
+    --accent-foreground: 0 0% 95%;
 
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 150 20% 98%;
+    --destructive-foreground: 0 0% 95%;
 
     --border: 150 30% 18%;
     --input: 150 30% 18%;
     --ring: 130 50% 50%;
     
     --sidebar-background: 150 30% 8%;
-    --sidebar-foreground: 150 20% 98%;
+    --sidebar-foreground: 0 0% 95%;
     --sidebar-primary: 130 50% 50%;
     --sidebar-primary-foreground: 150 30% 10%;
     --sidebar-accent: 150 30% 15%;
-    --sidebar-accent-foreground: 150 20% 98%;
+    --sidebar-accent-foreground: 0 0% 95%;
     --sidebar-border: 150 30% 18%;
     --sidebar-ring: 130 50% 50%;
   }
@@ -168,39 +168,39 @@
   /* Ocean Theme */
   .ocean {
     --background: 220 50% 10%;
-    --foreground: 210 40% 98%;
+    --foreground: 0 0% 95%;
 
     --card: 220 50% 12%;
-    --card-foreground: 210 40% 98%;
+    --card-foreground: 0 0% 95%;
 
     --popover: 220 50% 12%;
-    --popover-foreground: 210 40% 98%;
+    --popover-foreground: 0 0% 95%;
 
     --primary: 200 100% 60%;
     --primary-foreground: 220 50% 10%;
 
     --secondary: 190 90% 50%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary-foreground: 0 0% 95%;
 
     --muted: 220 50% 15%;
     --muted-foreground: 215 20% 75%;
 
     --accent: 200 100% 60%;
-    --accent-foreground: 210 40% 98%;
+    --accent-foreground: 0 0% 95%;
 
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 95%;
 
     --border: 220 50% 18%;
     --input: 220 50% 18%;
     --ring: 200 100% 60%;
     
     --sidebar-background: 220 50% 8%;
-    --sidebar-foreground: 210 40% 98%;
+    --sidebar-foreground: 0 0% 95%;
     --sidebar-primary: 200 100% 60%;
     --sidebar-primary-foreground: 220 50% 10%;
     --sidebar-accent: 220 50% 15%;
-    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-accent-foreground: 0 0% 95%;
     --sidebar-border: 220 50% 18%;
     --sidebar-ring: 200 100% 60%;
   }
@@ -213,20 +213,6 @@
 
   body {
     @apply bg-background text-foreground;
-  }
-
-  /* Fix for text contrast issues */
-  .text-foreground {
-    @apply text-opacity-90;
-  }
-
-  /* Reset text opacity for theme-sensitive content */
-  .light .text-foreground,
-  .dark .text-foreground,
-  .cyberpunk .text-foreground,
-  .forest .text-foreground,
-  .ocean .text-foreground {
-    @apply text-opacity-100;
   }
 }
 
@@ -272,11 +258,11 @@ h1, h2, h3, h4, h5, h6, p, span, div, button {
 
 /* ChatGPT-like UI elements */
 .rounded-chatgpt {
-  @apply rounded-2xl;
+  @apply rounded-xl;
 }
 
 .chatgpt-bubble {
-  @apply rounded-2xl border border-border/30 bg-background p-4;
+  @apply rounded-xl border border-border/30 bg-background p-4;
 }
 
 .chatgpt-button {
@@ -289,23 +275,6 @@ h1, h2, h3, h4, h5, h6, p, span, div, button {
 
 .chatgpt-dropdown {
   @apply bg-popover text-popover-foreground border border-border shadow-lg rounded-xl overflow-hidden;
-}
-
-/* Model-specific message styles */
-.message-gpt-4o, .message-gpt-4o-mini {
-  @apply border-l-4 border-green-500/30;
-}
-
-.message-claude-3-sonnet {
-  @apply border-l-4 border-purple-500/30;
-}
-
-.message-gemini-pro {
-  @apply border-l-4 border-blue-500/30;
-}
-
-.message-grok-1 {
-  @apply border-l-4 border-red-500/30;
 }
 
 /* Enhanced animation classes */
@@ -352,4 +321,16 @@ h1, h2, h3, h4, h5, h6, p, span, div, button {
   }
 }
 
-/* Other utilities and responsive classes */
+/* ChatGPT specific styles */
+.chatgpt-theme .dropdown-menu {
+  @apply rounded-lg overflow-hidden shadow-lg border border-border/30;
+}
+
+.chatgpt-theme button {
+  @apply rounded-lg transition-all duration-200;
+}
+
+.chatgpt-theme input,
+.chatgpt-theme textarea {
+  @apply rounded-lg border-border/30;
+}
