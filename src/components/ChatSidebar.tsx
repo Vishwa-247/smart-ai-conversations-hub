@@ -49,7 +49,7 @@ export default function ChatSidebar() {
       <div className="p-3">
         <Button 
           onClick={handleCreateChat} 
-          className="w-full flex items-center justify-center gap-2 animate-fade-in rounded-xl py-3 border border-sidebar-border/30 bg-sidebar-accent/20 hover:bg-sidebar-accent/30 transition-all duration-200"
+          className="w-full flex items-center justify-center gap-2 animate-fade-in rounded-xl py-3 border border-sidebar-border/30 bg-sidebar-accent/10 hover:bg-foreground/5 transition-all duration-300"
           variant="outline"
         >
           <PlusCircle className="h-4 w-4" />

@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -47,17 +48,17 @@
 
   /* Dark Theme - True black instead of blue-ish dark */
   .dark {
-    --background: 0 0% 10%;
+    --background: 0 0% 5%;
     --foreground: 210 40% 98%;
 
-    --card: 0 0% 12%;
+    --card: 0 0% 7%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 0 0% 12%;
+    --popover: 0 0% 7%;
     --popover-foreground: 210 40% 98%;
 
     --primary: 252 75% 66%;
-    --primary-foreground: 0 0% 10%;
+    --primary-foreground: 0 0% 5%;
 
     --secondary: 262 83% 58%;
     --secondary-foreground: 210 40% 98%;
@@ -75,7 +76,7 @@
     --input: 0 0% 20%;
     --ring: 252 75% 66%;
     
-    --sidebar-background: 0 0% 8%;
+    --sidebar-background: 0 0% 3%;
     --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 252 75% 66%;
     --sidebar-primary-foreground: 210 40% 98%;
@@ -266,7 +267,7 @@ h1, h2, h3, h4, h5, h6, p, span, div, button {
 }
 
 .chatgpt-button {
-  @apply rounded-xl transition-all duration-200 hover:bg-accent/20;
+  @apply rounded-xl transition-all duration-300 hover:bg-foreground/5;
 }
 
 .chatgpt-input {
@@ -327,10 +328,28 @@ h1, h2, h3, h4, h5, h6, p, span, div, button {
 }
 
 .chatgpt-theme button {
-  @apply rounded-lg transition-all duration-200;
+  @apply rounded-lg transition-all duration-300;
 }
 
 .chatgpt-theme input,
 .chatgpt-theme textarea {
   @apply rounded-lg border-border/30;
+}
+
+/* Common hover effect for all themes */
+.hover-transparent {
+  @apply hover:bg-foreground/5 transition-all duration-300;
+}
+
+/* Ensure all buttons have consistent rounded corners */
+button, 
+.button,
+[role="button"] {
+  @apply rounded-lg overflow-hidden;
+}
+
+/* Dropdown menus consistency */
+[role="menu"],
+[role="dialog"] {
+  @apply rounded-xl overflow-hidden;
 }
