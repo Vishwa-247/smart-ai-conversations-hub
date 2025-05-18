@@ -1,6 +1,6 @@
 
 import { useEffect, useRef } from 'react';
-import { Check, ChevronDown, MoonIcon, SunIcon, Laptop, Leaf, Waves } from 'lucide-react';
+import { Check, MoonIcon, SunIcon, Laptop, Leaf, Waves } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/contexts/ThemeContext';
 import gsap from 'gsap';
@@ -75,30 +75,32 @@ export default function ThemeSelector() {
           ref={buttonRef}
           variant="ghost" 
           size="icon"
-          className="transition-colors duration-200"
+          className="transition-colors duration-200 rounded-full hover:bg-sidebar-accent/50"
         >
-          <Icon className="h-[1.2rem] w-[1.2rem]" />
+          <Icon className="h-[1.2rem] w-[1.2rem] text-sidebar-foreground" />
           <span className="sr-only">Change theme</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="end" className="bg-popover border border-border">
         {themes.map((themeOption) => {
           const ThemeIcon = themeOption.icon;
           return (
             <DropdownMenuItem
               key={themeOption.value}
               onClick={() => setTheme(themeOption.value)}
-              className="flex items-center justify-between py-2"
+              className={`flex items-center justify-between py-3 px-3 hover:bg-accent/50 cursor-pointer rounded-sm ${
+                theme === themeOption.value ? 'bg-accent/25' : ''
+              }`}
             >
               <div className="flex items-center gap-2">
-                <ThemeIcon className="h-4 w-4" />
+                <ThemeIcon className="h-4 w-4 text-foreground" />
                 <div>
-                  <p className="font-medium">{themeOption.label}</p>
+                  <p className="font-medium text-foreground">{themeOption.label}</p>
                   <p className="text-xs text-muted-foreground">{themeOption.description}</p>
                 </div>
               </div>
               {theme === themeOption.value && (
-                <Check className="h-4 w-4" />
+                <Check className="h-4 w-4 text-foreground" />
               )}
             </DropdownMenuItem>
           );

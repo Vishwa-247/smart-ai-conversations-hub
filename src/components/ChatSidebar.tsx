@@ -49,7 +49,8 @@ export default function ChatSidebar() {
       <div className="p-4 border-b">
         <Button 
           onClick={handleCreateChat} 
-          className="w-full flex items-center gap-2 animate-fade-in"
+          className="w-full flex items-center gap-2 animate-fade-in rounded-md hover:opacity-70 transition-opacity"
+          variant="outline"
         >
           <PlusCircle className="h-4 w-4" />
           New Chat
@@ -62,9 +63,9 @@ export default function ChatSidebar() {
       
       <div className="flex-1 overflow-y-auto custom-scrollbar">
         <div className="p-4" ref={listRef}>
-          <h2 className="text-xs font-semibold text-muted-foreground mb-2">Recent Chats</h2>
+          <h2 className="text-xs font-semibold text-sidebar-foreground mb-2">Recent Chats</h2>
           {chats.length === 0 && (
-            <div className="text-sm text-muted-foreground py-4 text-center">
+            <div className="text-sm text-sidebar-foreground py-4 text-center">
               No conversations yet
             </div>
           )}
@@ -82,7 +83,7 @@ export default function ChatSidebar() {
       </div>
       
       <div className="p-4 border-t flex items-center justify-between">
-        <div className="text-sm font-medium">AI Chat App</div>
+        <div className="text-sm font-medium text-sidebar-foreground">AI Chat App</div>
         <ThemeSelector />
       </div>
     </div>

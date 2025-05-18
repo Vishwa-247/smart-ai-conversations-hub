@@ -31,6 +31,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     root.classList.remove('light', 'dark', 'cyberpunk', 'forest', 'ocean');
     root.classList.add(theme);
     localStorage.setItem('theme', theme);
+    
+    // Log for debugging
+    console.log(`Theme changed to: ${theme}`);
   }, [theme]);
 
   return (

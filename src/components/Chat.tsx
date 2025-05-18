@@ -76,7 +76,7 @@ export default function Chat() {
         <ChatHeader />
         <div className="flex flex-1 items-center justify-center">
           <div className="max-w-md text-center p-8 animate-fade-in">
-            <h2 className="text-2xl font-bold mb-4">Welcome to AI Chat</h2>
+            <h2 className="text-2xl font-bold mb-4 text-foreground">Welcome to AI Chat</h2>
             <p className="text-muted-foreground mb-6">
               Select a chat from the sidebar or create a new one to start a conversation 
               with any of our AI models.
@@ -93,7 +93,7 @@ export default function Chat() {
       
       <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
         {currentChat && currentChat.messages.length > 0 ? (
-          <>
+          <div className="max-w-3xl mx-auto">
             {currentChat.messages.map((message, index) => (
               <ChatMessage
                 key={message.id}
@@ -101,11 +101,14 @@ export default function Chat() {
                 isLastMessage={index === currentChat.messages.length - 1}
               />
             ))}
-          </>
+          </div>
         ) : (
           <div className="flex h-full items-center justify-center">
             <div className="max-w-md text-center p-8 animate-fade-in">
-              <h2 className="text-2xl font-bold mb-4">
+              <div className="mb-6 text-6xl opacity-50 flex justify-center">
+                💬
+              </div>
+              <h2 className="text-2xl font-bold mb-4 text-foreground">
                 Start a conversation
               </h2>
               <p className="text-muted-foreground">

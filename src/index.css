@@ -34,7 +34,7 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 252 75% 66%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 222.2 84% 4.9%;
@@ -144,7 +144,7 @@
     --secondary-foreground: 150 20% 98%;
 
     --muted: 150 30% 15%;
-    --muted-foreground: 150 20% 65%;
+    --muted-foreground: 150 20% 75%;
 
     --accent: 130 50% 50%;
     --accent-foreground: 150 20% 98%;
@@ -184,7 +184,7 @@
     --secondary-foreground: 210 40% 98%;
 
     --muted: 220 50% 15%;
-    --muted-foreground: 215 20% 65%;
+    --muted-foreground: 215 20% 75%;
 
     --accent: 200 100% 60%;
     --accent-foreground: 210 40% 98%;
@@ -252,6 +252,11 @@ html {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* Make sure text elements are always visible regardless of theme */
+h1, h2, h3, h4, h5, h6, p, span, div, button {
+  transition: color 0.3s ease;
+}
+
 /* Model-specific message styles */
 .message-gpt-4o, .message-gpt-4o-mini {
   @apply border-l-4 border-green-500/30;
@@ -285,6 +290,20 @@ html {
 
 .animate-slide-in-right {
   animation: slideInRight 0.3s ease-out forwards;
+}
+
+/* ChatGPT-like UI elements */
+.rounded-chatgpt {
+  @apply rounded-xl;
+}
+
+.button-chatgpt {
+  @apply rounded-xl transition-all duration-200 hover:opacity-80;
+}
+
+/* Improved dropdown style */
+.dropdown-chatgpt {
+  @apply bg-popover text-popover-foreground border border-border shadow-lg rounded-lg overflow-hidden;
 }
 
 @keyframes fadeIn {

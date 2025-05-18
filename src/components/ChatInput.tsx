@@ -29,10 +29,10 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
 
   return (
     <form onSubmit={handleSubmit} className="p-4 border-t">
-      <div className="relative">
+      <div className="relative max-w-3xl mx-auto">
         <Textarea
           placeholder="Type a message..."
-          className="resize-none pr-12 min-h-[60px] max-h-[200px]"
+          className="resize-none pr-12 min-h-[60px] max-h-[200px] rounded-xl border-foreground/20 shadow-sm bg-background text-foreground"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -43,7 +43,7 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
           size="icon"
           type="submit"
           disabled={!input.trim() || disabled}
-          className="absolute right-2 bottom-2 h-8 w-8 hover:scale-105 transition-transform"
+          className="absolute right-2 bottom-2 h-8 w-8 hover:scale-105 transition-transform rounded-full bg-primary text-primary-foreground"
         >
           <Send className="h-4 w-4" />
           <span className="sr-only">Send message</span>
