@@ -44,12 +44,12 @@ export default function ChatSidebar() {
   return (
     <div
       ref={sidebarRef}
-      className="w-64 border-r bg-sidebar h-screen flex flex-col"
+      className="w-60 border-r h-screen flex flex-col bg-sidebar text-sidebar-foreground"
     >
-      <div className="p-4 border-b">
+      <div className="p-2">
         <Button 
           onClick={handleCreateChat} 
-          className="w-full flex items-center gap-2 animate-fade-in rounded-md hover:opacity-70 transition-opacity"
+          className="w-full flex items-center justify-center gap-2 animate-fade-in rounded-xl py-3 border border-sidebar-border/30 bg-sidebar-accent/30 hover:bg-sidebar-accent transition-all"
           variant="outline"
         >
           <PlusCircle className="h-4 w-4" />
@@ -57,15 +57,15 @@ export default function ChatSidebar() {
         </Button>
       </div>
       
-      <div className="p-4">
+      <div className="p-2">
         <ModelSelector />
       </div>
       
       <div className="flex-1 overflow-y-auto custom-scrollbar">
-        <div className="p-4" ref={listRef}>
-          <h2 className="text-xs font-semibold text-sidebar-foreground mb-2">Recent Chats</h2>
+        <div className="px-2 py-1" ref={listRef}>
+          <h2 className="text-xs font-medium pl-2 mb-1 text-sidebar-foreground/70">Recent Chats</h2>
           {chats.length === 0 && (
-            <div className="text-sm text-sidebar-foreground py-4 text-center">
+            <div className="text-sm text-sidebar-foreground py-2 text-center">
               No conversations yet
             </div>
           )}
@@ -82,8 +82,8 @@ export default function ChatSidebar() {
         </div>
       </div>
       
-      <div className="p-4 border-t flex items-center justify-between">
-        <div className="text-sm font-medium text-sidebar-foreground">AI Chat App</div>
+      <div className="p-2 border-t flex items-center justify-between bg-sidebar-accent/10">
+        <div className="text-sm font-medium text-sidebar-foreground">AI Chat</div>
         <ThemeSelector />
       </div>
     </div>

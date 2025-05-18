@@ -32,6 +32,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     root.classList.add(theme);
     localStorage.setItem('theme', theme);
     
+    // Ensure text visibility based on theme
+    if (theme === 'light') {
+      root.style.setProperty('--foreground-contrast-fix', 'hsla(240, 10%, 3.9%, 1)');
+    } else {
+      root.style.setProperty('--foreground-contrast-fix', 'hsla(0, 0%, 98%, 1)');
+    }
+    
     // Log for debugging
     console.log(`Theme changed to: ${theme}`);
   }, [theme]);

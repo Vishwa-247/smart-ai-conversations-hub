@@ -75,20 +75,20 @@ export default function ThemeSelector() {
           ref={buttonRef}
           variant="ghost" 
           size="icon"
-          className="transition-colors duration-200 rounded-full hover:bg-sidebar-accent/50"
+          className="rounded-full h-8 w-8 hover:bg-accent/30"
         >
-          <Icon className="h-[1.2rem] w-[1.2rem] text-sidebar-foreground" />
+          <Icon className="h-[1.1rem] w-[1.1rem] text-foreground" />
           <span className="sr-only">Change theme</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="bg-popover border border-border">
+      <DropdownMenuContent align="end" className="w-56 rounded-xl overflow-hidden">
         {themes.map((themeOption) => {
           const ThemeIcon = themeOption.icon;
           return (
             <DropdownMenuItem
               key={themeOption.value}
               onClick={() => setTheme(themeOption.value)}
-              className={`flex items-center justify-between py-3 px-3 hover:bg-accent/50 cursor-pointer rounded-sm ${
+              className={`flex items-center justify-between py-2 px-3 cursor-pointer rounded-lg ${
                 theme === themeOption.value ? 'bg-accent/25' : ''
               }`}
             >
@@ -96,7 +96,7 @@ export default function ThemeSelector() {
                 <ThemeIcon className="h-4 w-4 text-foreground" />
                 <div>
                   <p className="font-medium text-foreground">{themeOption.label}</p>
-                  <p className="text-xs text-muted-foreground">{themeOption.description}</p>
+                  <p className="text-xs text-foreground/70">{themeOption.description}</p>
                 </div>
               </div>
               {theme === themeOption.value && (

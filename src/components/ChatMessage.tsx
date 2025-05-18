@@ -35,11 +35,11 @@ export default function ChatMessage({ message, isLastMessage }: ChatMessageProps
   return (
     <div
       ref={messageRef}
-      className={`p-4 mb-4 ${
+      className={`p-4 mb-3 ${
         isUser
           ? "bg-primary/5 border border-primary/10"
           : "bg-muted/50 border border-muted/20"
-      } rounded-xl`}
+      } rounded-2xl max-w-3xl mx-auto`}
     >
       <div className="flex items-center mb-2">
         <div
@@ -47,7 +47,7 @@ export default function ChatMessage({ message, isLastMessage }: ChatMessageProps
             isUser ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
           }`}
         >
-          {isUser ? "Y" : "AI"}
+          {isUser ? "U" : "AI"}
         </div>
         <div className="ml-2 font-medium text-foreground">
           {isUser ? "You" : message.model || "Assistant"}
