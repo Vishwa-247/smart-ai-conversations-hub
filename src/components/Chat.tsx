@@ -91,9 +91,9 @@ export default function Chat() {
     <div className="flex h-screen flex-col">
       <ChatHeader />
       
-      <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto custom-scrollbar">
         {currentChat && currentChat.messages.length > 0 ? (
-          <div className="max-w-3xl mx-auto">
+          <div className="divide-y divide-border/10">
             {currentChat.messages.map((message, index) => (
               <ChatMessage
                 key={message.id}

@@ -2,6 +2,8 @@
 import { Message } from "@/contexts/ChatContext";
 import { useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
+import { User, Bot } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import gsap from "gsap";
 
 interface ChatMessageProps {
@@ -35,26 +37,33 @@ export default function ChatMessage({ message, isLastMessage }: ChatMessageProps
   return (
     <div
       ref={messageRef}
-      className={`p-4 mb-3 ${
-        isUser
-          ? "bg-primary/10 border border-primary/10"
-          : "bg-muted/30 border border-muted/10"
-      } rounded-2xl max-w-3xl mx-auto`}
+      className={`py-6 px-4 ${
+        isUser ? "bg-transparent" : "bg-muted/10"
+      } w-full`}
     >
-      <div className="flex items-center mb-2">
-        <div
-          className={`h-8 w-8 rounded-full flex items-center justify-center ${
-            isUser ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
-          }`}
-        >
-          {isUser ? "You" : "AI"}
+      <div className="max-w-3xl mx-auto flex gap-4">
+        <div className="flex-shrink-0 mt-0.5">
+          <Avatar className={`h-8 w-8 rounded-full ${isUser ? "bg-primary/90" : "bg-secondary"}`}>
+            {isUser ? (
+              <AvatarFallback className="text-primary-foreground">
+                <User size={16} />
+              </AvatarFallback>
+            ) : (
+              <AvatarFallback className="text-secondary-foreground">
+                <Bot size={16} />
+              </AvatarFallback>
+            )}
+          </Avatar>
         </div>
-        <div className="ml-2 font-medium">
-          {isUser ? "You" : message.model || "Assistant"}
+        
+        <div className="flex flex-col flex-1">
+          <div className="font-medium text-sm mb-1">
+            {isUser ? "You" : message.model || "Assistant"}
+          </div>
+          <div className="prose dark:prose-invert prose-sm max-w-none">
+            <ReactMarkdown>{message.content}</ReactMarkdown>
+          </div>
         </div>
-      </div>
-      <div className="prose dark:prose-invert max-w-none">
-        <ReactMarkdown>{message.content}</ReactMarkdown>
       </div>
     </div>
   );

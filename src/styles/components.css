@@ -82,3 +82,16 @@ button,
 .light .dropdown-item-highlight {
   @apply bg-slate-50 hover:bg-slate-100;
 }
+
+/* ChatGPT-like message styling */
+.message-container {
+  @apply border-b border-border/10 last:border-b-0;
+}
+
+.ai-message-bg {
+  @apply bg-muted/10;
+}
+
+.user-message-bg {
+  @apply bg-transparent;
+}
