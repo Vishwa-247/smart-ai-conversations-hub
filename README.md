@@ -22,19 +22,65 @@ A modern chat application that allows users to interact with various AI language
 - React Query for data fetching
 - React Markdown for message formatting
 
-### Build & Deployment
-- Docker for containerization
-- Kubernetes for orchestration
-- Nginx for static file serving
+### Backend
+- Flask for API endpoints
+- MongoDB for data storage
+- Support for multiple AI services:
+  - OpenAI GPT models
+  - Google Gemini
+  - Anthropic Claude
+  - Grok (placeholder)
 
 ## Running Locally
 
+### Frontend
 ```bash
 # Install dependencies
 npm install
 
 # Start development server
 npm run dev
+```
+
+### Backend
+```bash
+# Navigate to backend directory
+cd backend
+
+# Create virtual environment
+python -m venv venv
+
+# Activate virtual environment
+# On Windows
+venv\Scripts\activate
+# On macOS/Linux
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Set up environment variables
+# Create a .env file in the backend directory with the following variables:
+# MONGO_URI=mongodb://localhost:27017/
+# DB_NAME=ai_chat_db
+# GEMINI_API_KEY=your_gemini_api_key
+# OPENAI_API_KEY=your_openai_api_key (optional)
+# ANTHROPIC_API_KEY=your_anthropic_api_key (optional)
+
+# Start the Flask server
+python app.py
+```
+
+## Environment Variables
+
+The following environment variables should be added to the `.env` file in the backend directory:
+
+```
+MONGO_URI=mongodb://localhost:27017/
+DB_NAME=ai_chat_db
+GEMINI_API_KEY=AIzaSyD7H1yePFJWYW3zdtk7LktQz7WpBfU9LLc
+OPENAI_API_KEY=your_openai_api_key (optional)
+ANTHROPIC_API_KEY=your_anthropic_api_key (optional)
 ```
 
 ## Docker Deployment
@@ -55,7 +101,7 @@ docker run -p 8080:80 ai-chat-app
 
 ### Using Docker Compose
 
-For a more complete setup (when the backend is implemented):
+For a more complete setup:
 
 ```bash
 # Start all services
@@ -68,77 +114,31 @@ docker-compose logs -f
 docker-compose down
 ```
 
-## Kubernetes Deployment
-
-### Why Kubernetes?
-
-Kubernetes enables scalable, reliable deployments with features like:
-- **Horizontal scaling**: Automatically add more instances during high load
-- **Self-healing**: Restart containers that fail or become unresponsive
-- **Rolling updates**: Update the application without downtime
-
-### Deploying to Kubernetes
-
-```bash
-# Apply the Kubernetes configuration
-kubectl apply -f kubernetes.yaml
-
-# Check deployment status
-kubectl get deployments
-
-# Check pods
-kubectl get pods
-
-# Check services
-kubectl get services
-```
-
-### What Happens After Kubernetes Deployment?
-
-1. **Pods Creation**: Kubernetes creates pods according to your deployment specifications
-2. **Service Exposure**: The service makes your pods accessible within the cluster
-3. **Ingress Configuration**: The ingress controller routes external traffic to your service
-4. **Scaling**: Kubernetes handles scaling based on load or your configuration
-5. **Health Monitoring**: Kubernetes monitors container health and restarts failed containers
-
-### Accessing Your Deployed App
-
-Once deployed, the application will be available at the hostname specified in your ingress configuration.
-
-For local testing with minikube:
-
-```bash
-# Enable ingress addon
-minikube addons enable ingress
-
-# Get minikube IP
-minikube ip
-
-# Add hosts entry (replace with your minikube IP)
-# 192.168.49.2 chat-app.example.com
-
-# Access the app at http://chat-app.example.com
-```
-
 ## Project Structure
 
 ```
-├── src/
-│   ├── components/       # React components
-│   ├── contexts/         # Context providers
-│   ├── hooks/            # Custom React hooks
-│   ├── services/         # API services
-│   ├── pages/            # Application pages
-│   └── lib/              # Utility functions
-├── Dockerfile            # Docker configuration
-├── docker-compose.yml    # Multi-container Docker config
-├── kubernetes.yaml       # Kubernetes deployment config
-└── nginx.conf            # Nginx server configuration
+├── frontend/
+│   ├── src/
+│   │   ├── components/       # React components
+│   │   ├── contexts/         # Context providers
+│   │   ├── hooks/            # Custom React hooks
+│   │   ├── services/         # API services
+│   │   ├── pages/            # Application pages
+│   │   └── lib/              # Utility functions
+├── backend/
+│   ├── .env                  # Environment variables
+│   ├── app.py                # Main Flask application
+│   ├── database/             # Database connection and operations
+│   ├── models/               # Data models
+│   ├── routers/              # API endpoints
+│   └── services/             # AI service integrations
+├── Dockerfile                # Docker configuration
+├── docker-compose.yml        # Multi-container Docker config
+└── README.md                 # Project documentation
 ```
 
 ## Future Enhancements
 
-- Backend implementation with Flask and MongoDB
 - User authentication and saved preferences
 - Custom system prompts for each AI model
 - File upload capabilities

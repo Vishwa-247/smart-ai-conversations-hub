@@ -95,3 +95,19 @@ button,
 .user-message-bg {
   @apply bg-transparent;
 }
+
+/* Fix icon visibility in light mode */
+.light .text-primary-foreground,
+.light .text-secondary-foreground {
+  @apply text-white;
+}
+
+/* Add contrast to icons in light mode */
+.light svg {
+  @apply text-gray-700;
+}
+
+/* Ensure proper icon visibility in avatar fallbacks */
+.light .Avatar-fallback svg {
+  @apply text-white;
+}
