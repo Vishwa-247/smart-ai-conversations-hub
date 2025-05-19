@@ -21,6 +21,7 @@ export const apiService = {
         model
       });
 
+      console.log("API response:", response.data);
       return response.data;
     } catch (error) {
       console.error('API error:', error);
