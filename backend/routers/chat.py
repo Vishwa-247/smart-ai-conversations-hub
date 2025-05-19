@@ -1,4 +1,3 @@
-
 from datetime import datetime
 
 from database.mongodb import MongoDB
@@ -30,6 +29,7 @@ system_message = {
 @chat_router.route('/chat', methods=['POST'])
 def chat():
     data = request.json
+    print(f"Received request data: {data}")
     model = data.get('model', 'gpt-4o')
     message = data.get('message', '')
     conversation_id = data.get('conversation_id')
