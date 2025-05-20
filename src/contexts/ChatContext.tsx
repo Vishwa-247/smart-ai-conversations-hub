@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { apiService } from '@/services/api';
+import { apiService, ModelType as ApiModelType } from '@/services/api';
 
 // Define our models
 export type ModelType = 'gpt-4o' | 'gpt-4o-mini' | 'claude-3-sonnet' | 'gemini-pro' | 'grok-1';

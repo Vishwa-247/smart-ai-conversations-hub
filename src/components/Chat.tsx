@@ -66,7 +66,7 @@ export default function Chat() {
       const response = await apiService.sendMessage(
         currentChatId || "",
         content,
-        currentModel,
+        currentModel as any, // Type conversion since the API and context use different model types
         systemPromptToUse
       );
       
