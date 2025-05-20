@@ -1,69 +1,152 @@
 
-import axios from 'axios';
-import { Message, ModelType } from '@/contexts/ChatContext';
+  import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+  // API base URL - change this to your Flask server's address
+  const API_BASE_URL = 'http://localhost:5000/api';
 
-interface ApiResponse {
-  role: 'assistant';
-  content: string;
-  conversation_id?: string;
-}
+  // API client instance
+  const apiClient = axios.create({
+    baseURL: API_BASE_URL,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
 
-export const apiService = {
-  async sendMessage(chatId: string, message: string, model: ModelType, systemPrompt?: string): Promise<ApiResponse> {
+  export type ModelType = 'chatgpt' | 'gemini' | 'claude' | string;
+
+  export interface ChatMessage {
+    role: 'user' | 'assistant' | 'system';
+    content: string;
+    timestamp?: string;
+  }
+
+  export interface CustomModel {
+    id: string;
+    name: string;
+    apiEndpoint: string;
+    apiKey: string;
+  }
+
+  interface ChatRequest {
+    model: ModelType;
+    message: string;
+    conversation_id?: string;
+    custom_model?: CustomModel;
+  }
+
+  interface ChatResponse {
+    response: string;
+    conversation_id: string;
+    error?: string;
+  }
+
+  interface Chat {
+    _id: string;
+    user_id: string;
+    title: string;
+    model: ModelType;
+    created_at: string;
+    updated_at: string;
+  }
+
+  interface ChatsResponse {
+    chats: Chat[];
+    error?: string;
+  }
+
+  interface ChatHistoryResponse {
+    messages: ChatMessage[];
+    error?: string;
+  }
+
+  interface CustomModelRequest {
+    id: string;
+    name: string;
+    apiEndpoint: string;
+  }
+
+  interface CustomModelResponse {
+    success: boolean;
+    message: string;
+    error?: string;
+  }
+
+  // Send a chat message to the backend
+  export const sendChatMessage = async (request: ChatRequest): Promise<ChatResponse> => {
     try {
-      console.log(`Sending message to ${model}: ${message}`);
-      
-      // Prepare request data
-      const requestData: any = {
-        conversation_id: chatId,
-        message,
-        model
-      };
-      
-      // Add system prompt for new conversations (when chatId is undefined or '')
-      if (systemPrompt && !chatId) {
-        requestData.system_prompt = systemPrompt;
+      // Check if this is a custom model
+      if (!['chatgpt', 'gemini', 'claude'].includes(request.model)) {
+        // Load custom models from localStorage
+        const customModelsStr = localStorage.getItem('custom-models');
+        if (customModelsStr) {
+          const customModels: CustomModel[] = JSON.parse(customModelsStr);
+          const customModel = customModels.find(m => m.id === request.model);
+          
+          if (customModel) {
+            // Add the custom model details to the request
+            request.custom_model = customModel;
+          }
+        }
       }
       
-      const response = await axios.post(`${API_BASE_URL}/chat`, requestData);
-
-      console.log("API response:", response.data);
+      const response = await apiClient.post<ChatResponse>('/chat', request);
       return response.data;
     } catch (error) {
-      console.error('API error:', error);
-      throw error;
+      if (axios.isAxiosError(error) && error.response?.data?.error) {
+        throw new Error(error.response.data.error);
+      }
+      throw new Error('Failed to connect to the server');
     }
-  },
+  };
 
-  async getChats() {
+  // Get all chats for the current user
+  export const getChats = async (): Promise<Chat[]> => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/chats`);
-      return response.data.chats;
+      const response = await apiClient.get<ChatsResponse>('/chats');
+      return response.data.chats || [];
     } catch (error) {
-      console.error('Failed to fetch chats:', error);
-      throw error;
+      if (axios.isAxiosError(error) && error.response?.data?.error) {
+        throw new Error(error.response.data.error);
+      }
+      throw new Error('Failed to fetch chats');
     }
-  },
+  };
 
-  async getChatHistory(chatId: string) {
+  // Get chat history for a specific conversation
+  export const getChatHistory = async (chatId: string, limit = 50): Promise<ChatMessage[]> => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/chats/${chatId}`);
-      return response.data.messages;
+      const response = await apiClient.get<ChatHistoryResponse>(`/chats/${chatId}?limit=${limit}`);
+      return response.data.messages || [];
     } catch (error) {
-      console.error(`Failed to fetch chat history for ${chatId}:`, error);
-      throw error;
+      if (axios.isAxiosError(error) && error.response?.data?.error) {
+        throw new Error(error.response.data.error);
+      }
+      throw new Error('Failed to fetch chat history');
     }
-  },
+  };
 
-  async deleteChat(chatId: string) {
+  // Delete a chat
+  export const deleteChat = async (chatId: string): Promise<boolean> => {
     try {
-      const response = await axios.delete(`${API_BASE_URL}/chats/${chatId}`);
-      return response.data;
+      const response = await apiClient.delete(`/chats/${chatId}`);
+      return response.data.success;
     } catch (error) {
-      console.error(`Failed to delete chat ${chatId}:`, error);
-      throw error;
+      if (axios.isAxiosError(error) && error.response?.data?.error) {
+        throw new Error(error.response.data.error);
+      }
+      throw new Error('Failed to delete chat');
     }
-  }
-};
+  };
+
+  // Save a custom model configuration
+  export const saveCustomModel = async (model: CustomModelRequest): Promise<boolean> => {
+    try {
+      const response = await apiClient.post<CustomModelResponse>('/models/custom', model);
+      return response.data.success;
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.data?.error) {
+        throw new Error(error.response.data.error);
+      }
+      throw new Error('Failed to save custom model');
+    }
+  };
