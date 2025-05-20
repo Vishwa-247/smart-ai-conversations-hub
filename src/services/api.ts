@@ -74,6 +74,16 @@ interface CustomModelResponse {
   error?: string;
 }
 
+interface SystemPromptUpdateRequest {
+  system_prompt: string;
+}
+
+interface SystemPromptUpdateResponse {
+  success: boolean;
+  message: string;
+  error?: string;
+}
+
 // Send a chat message to the backend
 export const sendChatMessage = async (request: ChatRequest): Promise<ChatResponse> => {
   try {
@@ -141,6 +151,21 @@ export const deleteChat = async (chatId: string): Promise<boolean> => {
   }
 };
 
+// Update system prompt for a chat
+export const updateSystemPrompt = async (chatId: string, systemPrompt: string): Promise<boolean> => {
+  try {
+    const response = await apiClient.patch<SystemPromptUpdateResponse>(`/chats/${chatId}/system-prompt`, {
+      system_prompt: systemPrompt
+    });
+    return response.data.success;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.data?.error) {
+      throw new Error(error.response.data.error);
+    }
+    throw new Error('Failed to update system prompt');
+  }
+};
+
 // Save a custom model configuration
 export const saveCustomModel = async (model: CustomModelRequest): Promise<boolean> => {
   try {
@@ -189,4 +214,5 @@ export const apiService = {
   deleteChat,
   saveCustomModel,
   sendMessage,
+  updateSystemPrompt,
 };

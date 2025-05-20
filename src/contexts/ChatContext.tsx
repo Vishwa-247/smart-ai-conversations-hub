@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { apiService, ModelType as ApiModelType } from '@/services/api';
 
@@ -34,6 +33,8 @@ interface ChatContextType {
   deleteChat: (id: string) => void;
   isLoading: boolean;
   setIsLoading: (isLoading: boolean) => void;
+  updateSystemPrompt: (chatId: string, systemPrompt: string) => void;
+  getSystemPrompt: (chatId: string) => string | undefined;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -153,6 +154,28 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Update system prompt for a specific chat
+  const updateSystemPrompt = (chatId: string, systemPrompt: string) => {
+    setChats((prev) => {
+      return prev.map((chat) => {
+        if (chat.id === chatId) {
+          return {
+            ...chat,
+            systemPrompt,
+            updatedAt: new Date(),
+          };
+        }
+        return chat;
+      });
+    });
+  };
+  
+  // Get system prompt for a specific chat
+  const getSystemPrompt = (chatId: string): string | undefined => {
+    const chat = chats.find((c) => c.id === chatId);
+    return chat?.systemPrompt;
+  };
+
   // Instead of automatically creating a chat, just set the current model
   useEffect(() => {
     if (chats.length === 0) {
@@ -171,6 +194,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     deleteChat,
     isLoading,
     setIsLoading,
+    updateSystemPrompt,
+    getSystemPrompt,
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

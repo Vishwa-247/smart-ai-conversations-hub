@@ -7,6 +7,8 @@ import SystemPromptInput from "./SystemPromptInput";
 import { useEffect, useRef, useState } from "react";
 import { apiService } from "@/services/api";
 import { Message } from "@/contexts/ChatContext";
+import { Button } from "./ui/button";
+import { Settings } from "lucide-react";
 
 export default function Chat() {
   const { 
@@ -15,11 +17,14 @@ export default function Chat() {
     addMessage, 
     currentModel,
     isLoading,
-    setIsLoading
+    setIsLoading,
+    updateSystemPrompt,
+    getSystemPrompt
   } = useChat();
   
   const [showSystemPrompt, setShowSystemPrompt] = useState<boolean>(false);
   const [systemPrompt, setSystemPrompt] = useState<string>("");
+  const [isEditingSystemPrompt, setIsEditingSystemPrompt] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // Get current chat
@@ -32,12 +37,43 @@ export default function Chat() {
     } else {
       setShowSystemPrompt(false);
     }
-  }, [currentChatId, currentChat]);
+    
+    // Load system prompt if available
+    if (currentChatId) {
+      const prompt = getSystemPrompt(currentChatId);
+      if (prompt !== undefined) {
+        setSystemPrompt(prompt);
+      } else {
+        setSystemPrompt("");
+      }
+    }
+  }, [currentChatId, currentChat, getSystemPrompt]);
   
   // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [currentChat?.messages]);
+  
+  // Handle saving system prompt
+  const handleSaveSystemPrompt = async () => {
+    if (currentChatId) {
+      updateSystemPrompt(currentChatId, systemPrompt);
+      
+      // Call API to update system prompt on the backend
+      try {
+        await apiService.updateSystemPrompt(currentChatId, systemPrompt);
+      } catch (error) {
+        console.error("Error updating system prompt:", error);
+      }
+      
+      setIsEditingSystemPrompt(false);
+    }
+  };
+  
+  // Toggle system prompt editor for existing chats
+  const toggleSystemPromptEditor = () => {
+    setIsEditingSystemPrompt(!isEditingSystemPrompt);
+  };
   
   // Handle sending a message
   const handleSendMessage = async (content: string) => {
@@ -67,7 +103,7 @@ export default function Chat() {
         currentChatId || "",
         content,
         currentModel as any, // Type conversion since the API and context use different model types
-        systemPromptToUse
+        systemPromptToUse || currentChat?.systemPrompt
       );
       
       // Add AI response
@@ -89,6 +125,11 @@ export default function Chat() {
           content: response.content,
           model: currentModel,
         });
+        
+        // Save the system prompt for this new chat
+        if (systemPrompt) {
+          updateSystemPrompt(newChatId, systemPrompt);
+        }
       }
     } catch (error) {
       console.error("Error sending message:", error);
@@ -142,6 +183,33 @@ export default function Chat() {
               value={systemPrompt} 
               onChange={setSystemPrompt}
             />
+          </div>
+        )}
+        
+        {!showSystemPrompt && currentChat?.systemPrompt && (isEditingSystemPrompt || currentChat.messages.length === 0) && (
+          <div className="max-w-3xl mx-auto p-4 animate-fade-in">
+            <SystemPromptInput 
+              value={systemPrompt}
+              onChange={setSystemPrompt}
+              onSave={handleSaveSystemPrompt}
+              isEditing={isEditingSystemPrompt}
+              toggleEdit={toggleSystemPromptEditor}
+              readOnly={!isEditingSystemPrompt}
+            />
+          </div>
+        )}
+        
+        {!showSystemPrompt && currentChat?.systemPrompt && !isEditingSystemPrompt && currentChat.messages.length > 0 && (
+          <div className="max-w-3xl mx-auto px-4 pt-4 pb-0">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleSystemPromptEditor}
+              className="flex gap-1 text-xs rounded-lg border border-border/50 bg-muted/10"
+            >
+              <Settings className="h-3 w-3" />
+              View/Edit System Instructions
+            </Button>
           </div>
         )}
         
