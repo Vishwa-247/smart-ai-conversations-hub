@@ -11,15 +11,23 @@ interface ApiResponse {
 }
 
 export const apiService = {
-  async sendMessage(chatId: string, message: string, model: ModelType): Promise<ApiResponse> {
+  async sendMessage(chatId: string, message: string, model: ModelType, systemPrompt?: string): Promise<ApiResponse> {
     try {
       console.log(`Sending message to ${model}: ${message}`);
       
-      const response = await axios.post(`${API_BASE_URL}/chat`, {
+      // Prepare request data
+      const requestData: any = {
         conversation_id: chatId,
         message,
         model
-      });
+      };
+      
+      // Add system prompt for new conversations (when chatId is undefined or '')
+      if (systemPrompt && !chatId) {
+        requestData.system_prompt = systemPrompt;
+      }
+      
+      const response = await axios.post(`${API_BASE_URL}/chat`, requestData);
 
       console.log("API response:", response.data);
       return response.data;

@@ -23,7 +23,7 @@ class MongoDB:
         self.chats = self.db[CHATS_COLLECTION]
         self.messages = self.db[MESSAGES_COLLECTION]
     
-    def create_chat(self, user_id="anonymous", title="New Chat", model="gpt-4o"):
+    def create_chat(self, user_id="anonymous", title="New Chat", model="gpt-4o", system_prompt=None):
         """Create a new chat and return its ID"""
         chat_data = {
             "user_id": user_id,
@@ -33,8 +33,27 @@ class MongoDB:
             "updated_at": datetime.utcnow()
         }
         
+        # Add system_prompt if provided
+        if system_prompt:
+            chat_data["system_prompt"] = system_prompt
+        
         result = self.chats.insert_one(chat_data)
         return str(result.inserted_id)
+    
+    def get_chat_by_id(self, chat_id):
+        """Get chat details by ID"""
+        try:
+            chat_id_obj = ObjectId(chat_id)
+            chat = self.chats.find_one({"_id": chat_id_obj})
+            
+            # Convert ObjectId to string for serialization
+            if chat and "_id" in chat:
+                chat["_id"] = str(chat["_id"])
+                
+            return chat
+        except Exception as e:
+            print(f"Error getting chat by ID: {e}")
+            return None
     
     def save_message(self, chat_id, role, content):
         """Save a message to the chat history"""

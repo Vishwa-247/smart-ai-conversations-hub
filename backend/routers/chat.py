@@ -1,3 +1,4 @@
+
 from datetime import datetime
 
 from database.mongodb import MongoDB
@@ -16,8 +17,8 @@ chat_router = Blueprint('chat', __name__, url_prefix='/api')
 # In-memory conversation cache (temporary, before saving to MongoDB)
 conversations_cache = {}
 
-# System message for AI
-system_message = {
+# Default system message (used as fallback)
+default_system_message = {
     "role": "system",
     "content": (
         "You are an AI assistant that provides helpful, accurate, and friendly responses. "
@@ -33,27 +34,48 @@ def chat():
     model = data.get('model', 'gpt-4o')
     message = data.get('message', '')
     conversation_id = data.get('conversation_id')
+    system_prompt = data.get('system_prompt', None)
     
     try:
         # Create a new conversation if it doesn't exist
         if not conversation_id:
             print("Creating new conversation...")
-            conversation_id = mongo_db.create_chat(model=model, title=message[:30])
-            print(f"New conversation created with ID: {conversation_id}")
-            # Initialize with system message in cache
-            conversations_cache[conversation_id] = [system_message]
+            # If system_prompt is provided, use it to create the chat
+            if system_prompt:
+                conversation_id = mongo_db.create_chat(model=model, title=message[:30], system_prompt=system_prompt)
+                print(f"New conversation created with ID: {conversation_id} and custom system prompt")
+                # Initialize with provided system message in cache
+                conversations_cache[conversation_id] = [{
+                    "role": "system",
+                    "content": system_prompt
+                }]
+            else:
+                conversation_id = mongo_db.create_chat(model=model, title=message[:30])
+                print(f"New conversation created with ID: {conversation_id} with default system prompt")
+                # Initialize with default system message in cache
+                conversations_cache[conversation_id] = [default_system_message]
         elif conversation_id not in conversations_cache:
             print(f"Loading conversation history for ID: {conversation_id}")
             # Load conversation history from DB to cache
             messages_db = mongo_db.get_chat_history(conversation_id)
             
+            # Get system prompt from the database
+            chat_data = mongo_db.get_chat_by_id(conversation_id)
+            system_prompt_content = chat_data.get('system_prompt', default_system_message["content"]) if chat_data else default_system_message["content"]
+            
             # Convert to the format needed by LLM clients
-            conversations_cache[conversation_id] = [system_message]  # Always start with system message
+            conversations_cache[conversation_id] = [{
+                "role": "system",
+                "content": system_prompt_content
+            }]
+            
+            # Add user and assistant messages
             for msg in messages_db:
-                conversations_cache[conversation_id].append({
-                    "role": msg["role"],
-                    "content": msg["content"]
-                })
+                if msg["role"] != "system":  # Skip system messages as we've already added our system message
+                    conversations_cache[conversation_id].append({
+                        "role": msg["role"],
+                        "content": msg["content"]
+                    })
         
         # Add user message to conversation cache
         conversations_cache[conversation_id].append({
