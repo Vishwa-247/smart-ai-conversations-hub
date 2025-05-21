@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useChat } from "@/contexts/ChatContext";
 import { useToast } from "@/components/ui/use-toast";
 import { useSystemPrompt } from "@/hooks/useSystemPrompt";
@@ -13,7 +13,8 @@ export function useChatActions() {
     isLoading,
     setIsLoading,
     updateSystemPrompt,
-    getSystemPrompt
+    getSystemPrompt,
+    createChat
   } = useChat();
   
   const [showSystemPrompt, setShowSystemPrompt] = useState<boolean>(false);
@@ -25,7 +26,7 @@ export function useChatActions() {
   const currentChat = chats.find((chat) => chat.id === currentChatId);
   
   // Handle saving system prompt
-  const handleSaveSystemPrompt = async () => {
+  const handleSaveSystemPrompt = useCallback(async () => {
     if (currentChatId) {
       // First update locally
       updateSystemPrompt(currentChatId, systemPrompt);
@@ -43,11 +44,14 @@ export function useChatActions() {
         });
       }
     }
-  };
+  }, [currentChatId, systemPrompt, updateSystemPrompt, saveSystemPrompt, toast]);
   
   // Handle sending a message
-  const handleSendMessage = async (content: string, files?: File[]) => {
+  const handleSendMessage = useCallback(async (content: string, files?: File[]) => {
+    if (!content.trim()) return;
+    
     // If system prompt is being shown, this is a new chat
+    const isNewChat = !currentChatId || (currentChat && currentChat.messages.length === 0);
     const systemPromptToUse = showSystemPrompt ? systemPrompt : undefined;
     
     // Add user message
@@ -123,7 +127,17 @@ export function useChatActions() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [
+    currentChatId, 
+    currentChat, 
+    addMessage, 
+    currentModel, 
+    systemPrompt, 
+    showSystemPrompt, 
+    setIsLoading,
+    updateSystemPrompt,
+    toast
+  ]);
 
   return {
     currentChatId,

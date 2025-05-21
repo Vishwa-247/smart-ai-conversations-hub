@@ -13,6 +13,7 @@ interface SystemPromptInputProps {
   isEditing?: boolean;
   toggleEdit?: () => void;
   readOnly?: boolean;
+  required?: boolean;
 }
 
 export default function SystemPromptInput({ 
@@ -21,7 +22,8 @@ export default function SystemPromptInput({
   onSave, 
   isEditing = false, 
   toggleEdit,
-  readOnly = false 
+  readOnly = false,
+  required = false
 }: SystemPromptInputProps) {
   const [tempValue, setTempValue] = useState(value);
   const { toast } = useToast();
@@ -32,6 +34,17 @@ export default function SystemPromptInput({
   }, [value]);
 
   const handleSave = () => {
+    // Validate if required
+    if (required && !tempValue.trim()) {
+      toast({
+        title: "System prompt required",
+        description: "Please provide instructions for the AI assistant.",
+        variant: "destructive",
+        duration: 3000,
+      });
+      return;
+    }
+    
     onChange(tempValue);
     if (onSave) {
       onSave();
@@ -47,7 +60,15 @@ export default function SystemPromptInput({
     <div className="space-y-2 rounded-xl border border-border/50 p-4 bg-muted/10">
       <div className="flex justify-between items-center">
         <Label htmlFor="system-prompt" className="text-sm font-medium">
-          {readOnly ? "System Instructions" : "System Instructions (optional)"}
+          {readOnly 
+            ? "System Instructions" 
+            : required 
+              ? "System Instructions (required)" 
+              : "System Instructions (optional)"
+          }
+          {required && !readOnly && (
+            <span className="text-destructive ml-1">*</span>
+          )}
         </Label>
         {toggleEdit && (
           <Button 
@@ -64,11 +85,15 @@ export default function SystemPromptInput({
       
       <Textarea
         id="system-prompt"
-        placeholder="Set custom instructions for the AI, e.g., 'You are a helpful coding assistant specialized in React...'"
+        placeholder={required 
+          ? "Define how the AI assistant should behave (required)" 
+          : "Set custom instructions for the AI, e.g., 'You are a helpful coding assistant specialized in React...'"
+        }
         value={isEditing ? tempValue : value}
         onChange={(e) => setTempValue(e.target.value)}
-        className="min-h-[100px] resize-none rounded-lg"
+        className={`min-h-[100px] resize-none rounded-lg ${required && !tempValue.trim() && !readOnly ? 'border-destructive' : ''}`}
         readOnly={readOnly && !isEditing}
+        required={required}
       />
       
       {isEditing && (
@@ -85,6 +110,7 @@ export default function SystemPromptInput({
             onClick={handleSave} 
             size="sm"
             className="rounded-lg"
+            disabled={required && !tempValue.trim()}
           >
             Save Changes
           </Button>
@@ -93,7 +119,10 @@ export default function SystemPromptInput({
       
       {!isEditing && !readOnly && (
         <p className="text-xs text-muted-foreground">
-          These instructions shape how the AI responds. Leave blank for default behavior.
+          {required 
+            ? "These instructions define how the AI will behave throughout your conversation." 
+            : "These instructions shape how the AI responds. Leave blank for default behavior."
+          }
         </p>
       )}
     </div>

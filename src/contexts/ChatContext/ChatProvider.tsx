@@ -13,6 +13,12 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
   // Create a new chat with the specified model
   const createChat = (model: ModelType, systemPrompt?: string) => {
+    // When creating a new chat, system prompt is now required
+    if (!systemPrompt) {
+      console.warn("System prompt is required to create a new chat");
+      return;
+    }
+    
     const newChatId = Date.now().toString();
     const newChat: Chat = {
       id: newChatId,
@@ -122,6 +128,11 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
   // Update system prompt for a specific chat
   const updateSystemPrompt = (chatId: string, systemPrompt: string) => {
+    if (!systemPrompt.trim()) {
+      console.warn("System prompt cannot be empty");
+      return;
+    }
+    
     setChats((prev) => {
       return prev.map((chat) => {
         if (chat.id === chatId) {
@@ -147,7 +158,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     if (chats.length === 0) {
       setCurrentChatId(null);
     }
-  }, []);
+  }, [chats]);
 
   const value = {
     chats,

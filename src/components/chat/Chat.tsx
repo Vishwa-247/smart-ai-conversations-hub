@@ -1,10 +1,12 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import ChatHeader from "@/components/ChatHeader";
 import ChatInput from "@/components/ChatInput";
 import { useChatActions } from "@/hooks/useChatActions";
 import ChatMessageList from "./ChatMessageList";
 import EmptyChat from "./EmptyChat";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function Chat() {
   const {
@@ -22,12 +24,16 @@ export default function Chat() {
     getSystemPrompt
   } = useChatActions();
   
-  // Show system prompt input when starting a new chat
+  const [isSystemPromptRequired, setIsSystemPromptRequired] = useState(true);
+  const { toast } = useToast();
+  
+  // Show system prompt input when starting a new chat or when already in a chat with no messages
   useEffect(() => {
     if (!currentChatId || (currentChat && currentChat.messages.length === 0)) {
       setShowSystemPrompt(true);
+      setIsSystemPromptRequired(true);
     } else {
-      setShowSystemPrompt(false);
+      setIsSystemPromptRequired(false);
     }
     
     // Load system prompt if available
@@ -41,14 +47,30 @@ export default function Chat() {
     }
   }, [currentChatId, currentChat, getSystemPrompt, setShowSystemPrompt, setSystemPrompt]);
   
+  // Custom send handler to validate system prompt
+  const handleSendWithValidation = (content: string, files?: File[]) => {
+    // For new chats, require system prompt
+    if ((!currentChatId || (currentChat && currentChat.messages.length === 0)) && !systemPrompt.trim()) {
+      toast({
+        title: "System prompt required",
+        description: "Please provide instructions for the AI assistant before starting the chat.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    handleSendMessage(content, files);
+  };
+  
   if (!currentChatId) {
     return (
       <EmptyChat
         systemPrompt={systemPrompt}
         setSystemPrompt={setSystemPrompt}
-        onSendMessage={handleSendMessage}
+        onSendMessage={handleSendWithValidation}
         isLoading={isLoading}
-        showSystemPrompt={showSystemPrompt}
+        showSystemPrompt={true} // Always show for new chats
+        isRequired={isSystemPromptRequired}
       />
     );
   }
@@ -69,7 +91,7 @@ export default function Chat() {
         />
       </div>
       
-      <ChatInput onSend={handleSendMessage} disabled={isLoading} />
+      <ChatInput onSend={handleSendWithValidation} disabled={isLoading} />
     </div>
   );
 }
