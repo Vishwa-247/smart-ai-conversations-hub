@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,11 @@ export default function SystemPromptInput({
   readOnly = false 
 }: SystemPromptInputProps) {
   const [tempValue, setTempValue] = useState(value);
+
+  // Update tempValue whenever value changes from outside
+  useEffect(() => {
+    setTempValue(value);
+  }, [value]);
 
   const handleSave = () => {
     onChange(tempValue);

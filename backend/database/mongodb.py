@@ -10,7 +10,7 @@ load_dotenv()
 
 # MongoDB connection from environment variables
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
-DB_NAME = os.getenv("DB_NAME", "ai_chat_db")
+DB_NAME = os.getenv("DB_NAME", "studymate_db")
 
 # Collections
 CHATS_COLLECTION = "chat_boxes"
@@ -23,7 +23,7 @@ class MongoDB:
         self.chats = self.db[CHATS_COLLECTION]
         self.messages = self.db[MESSAGES_COLLECTION]
     
-    def create_chat(self, user_id="anonymous", title="New Chat", model="gpt-4o", system_prompt=None):
+    def create_chat(self, user_id="anonymous", title="New Chat", model="chatgpt", system_prompt=None):
         """Create a new chat and return its ID"""
         chat_data = {
             "user_id": user_id,
@@ -33,27 +33,12 @@ class MongoDB:
             "updated_at": datetime.utcnow()
         }
         
-        # Add system_prompt if provided
+        # Add system prompt if provided
         if system_prompt:
             chat_data["system_prompt"] = system_prompt
         
         result = self.chats.insert_one(chat_data)
         return str(result.inserted_id)
-    
-    def get_chat_by_id(self, chat_id):
-        """Get chat details by ID"""
-        try:
-            chat_id_obj = ObjectId(chat_id)
-            chat = self.chats.find_one({"_id": chat_id_obj})
-            
-            # Convert ObjectId to string for serialization
-            if chat and "_id" in chat:
-                chat["_id"] = str(chat["_id"])
-                
-            return chat
-        except Exception as e:
-            print(f"Error getting chat by ID: {e}")
-            return None
     
     def save_message(self, chat_id, role, content):
         """Save a message to the chat history"""
@@ -99,6 +84,22 @@ class MongoDB:
             print(f"Error getting chat history: {e}")
             return []
     
+    def get_chat_by_id(self, chat_id):
+        """Get a chat by its ID"""
+        try:
+            chat_id_obj = ObjectId(chat_id)
+            chat = self.chats.find_one({"_id": chat_id_obj})
+            
+            if chat:
+                # Convert ObjectId to string for serialization
+                if "_id" in chat:
+                    chat["_id"] = str(chat["_id"])
+                    
+            return chat
+        except Exception as e:
+            print(f"Error getting chat by ID: {e}")
+            return None
+    
     def get_all_chats(self, user_id="anonymous", limit=20):
         """Get all chats for a specific user"""
         try:
@@ -130,4 +131,20 @@ class MongoDB:
             return True
         except Exception as e:
             print(f"Error deleting chat: {e}")
+            return False
+            
+    def update_system_prompt(self, chat_id, system_prompt):
+        """Update the system prompt for a chat"""
+        try:
+            chat_id_obj = ObjectId(chat_id)
+            
+            # Update system prompt in the chat document
+            result = self.chats.update_one(
+                {"_id": chat_id_obj},
+                {"$set": {"system_prompt": system_prompt, "updated_at": datetime.utcnow()}}
+            )
+            
+            return result.modified_count > 0
+        except Exception as e:
+            print(f"Error updating system prompt: {e}")
             return False

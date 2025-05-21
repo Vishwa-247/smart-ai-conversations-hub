@@ -33,6 +33,7 @@ interface ChatRequest {
   conversation_id?: string;
   custom_model?: CustomModel;
   system_prompt?: string;
+  files?: File[];
 }
 
 interface ChatResponse {
@@ -50,6 +51,7 @@ interface Chat {
   model: ModelType;
   created_at: string;
   updated_at: string;
+  system_prompt?: string;
 }
 
 interface ChatsResponse {
@@ -100,6 +102,16 @@ export const sendChatMessage = async (request: ChatRequest): Promise<ChatRespons
           request.custom_model = customModel;
         }
       }
+    }
+    
+    // Handle file uploads if present
+    if (request.files && request.files.length > 0) {
+      // For now, this is a placeholder for file handling
+      // In a real implementation, you would use FormData to upload files
+      console.log(`Preparing to upload ${request.files.length} files`);
+      
+      // We would need to implement a multipart/form-data upload here
+      // This is just a placeholder until backend support is added
     }
     
     const response = await apiClient.post<ChatResponse>('/chat', request);
@@ -184,7 +196,8 @@ export const sendMessage = async (
   chatId: string,
   message: string,
   model: ModelType,
-  systemPrompt?: string
+  systemPrompt?: string,
+  files?: File[]
 ): Promise<{ role: 'assistant', content: string, conversation_id?: string }> => {
   const request: ChatRequest = {
     model,
@@ -195,6 +208,11 @@ export const sendMessage = async (
   // Add system prompt if provided
   if (systemPrompt) {
     request.system_prompt = systemPrompt;
+  }
+  
+  // Add files if provided
+  if (files && files.length > 0) {
+    request.files = files;
   }
 
   const response = await sendChatMessage(request);

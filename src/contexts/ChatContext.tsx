@@ -1,8 +1,9 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { apiService, ModelType as ApiModelType } from '@/services/api';
 
 // Define our models
-export type ModelType = 'gpt-4o' | 'gpt-4o-mini' | 'claude-3-sonnet' | 'gemini-pro' | 'grok-1';
+export type ModelType = 'gemini-pro' | 'claude-3-sonnet' | 'grok-1';
 
 export interface Message {
   id: string;
@@ -42,7 +43,7 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [chats, setChats] = useState<Chat[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
-  const [currentModel, setCurrentModel] = useState<ModelType>('gpt-4o');
+  const [currentModel, setCurrentModel] = useState<ModelType>('gemini-pro');
   const [isLoading, setIsLoading] = useState(false);
 
   // Create a new chat with the specified model

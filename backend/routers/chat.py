@@ -171,3 +171,43 @@ def delete_chat(chat_id):
     except Exception as e:
         print(f"Error: {str(e)}")
         return jsonify({"error": str(e)}), 500
+
+@chat_router.route('/chats/<chat_id>/system-prompt', methods=['PATCH'])
+def update_system_prompt(chat_id):
+    try:
+        data = request.json
+        system_prompt = data.get('system_prompt', '')
+        
+        # Update system prompt in the database
+        success = mongo_db.update_system_prompt(chat_id, system_prompt)
+        
+        if success:
+            # Update system prompt in cache if it exists
+            if chat_id in conversations_cache:
+                # Find the system message index
+                system_idx = next((i for i, msg in enumerate(conversations_cache[chat_id]) if msg["role"] == "system"), None)
+                
+                if system_idx is not None:
+                    # Update existing system message
+                    conversations_cache[chat_id][system_idx]["content"] = system_prompt
+                else:
+                    # Add system message at the beginning
+                    conversations_cache[chat_id].insert(0, {
+                        "role": "system",
+                        "content": system_prompt
+                    })
+            
+            return jsonify({
+                "success": True,
+                "message": "System prompt updated successfully"
+            })
+        else:
+            return jsonify({
+                "success": False,
+                "message": "Failed to update system prompt"
+            }), 500
+        
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+

@@ -9,6 +9,7 @@ import { apiService } from "@/services/api";
 import { Message } from "@/contexts/ChatContext";
 import { Button } from "./ui/button";
 import { Settings } from "lucide-react";
+import { useToast } from "./ui/use-toast";
 
 export default function Chat() {
   const { 
@@ -26,6 +27,7 @@ export default function Chat() {
   const [systemPrompt, setSystemPrompt] = useState<string>("");
   const [isEditingSystemPrompt, setIsEditingSystemPrompt] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
   
   // Get current chat
   const currentChat = chats.find((chat) => chat.id === currentChatId);
@@ -62,8 +64,20 @@ export default function Chat() {
       // Call API to update system prompt on the backend
       try {
         await apiService.updateSystemPrompt(currentChatId, systemPrompt);
+        
+        toast({
+          title: "System prompt updated",
+          description: "Your custom instructions have been saved",
+          duration: 3000,
+        });
       } catch (error) {
         console.error("Error updating system prompt:", error);
+        toast({
+          title: "Error",
+          description: "Failed to update system prompt",
+          variant: "destructive",
+          duration: 5000,
+        });
       }
       
       setIsEditingSystemPrompt(false);
@@ -76,14 +90,14 @@ export default function Chat() {
   };
   
   // Handle sending a message
-  const handleSendMessage = async (content: string) => {
+  const handleSendMessage = async (content: string, files?: File[]) => {
     // If system prompt is being shown, this is a new chat
     const systemPromptToUse = showSystemPrompt ? systemPrompt : undefined;
     
     // Add user message
     const userMessage: Omit<Message, "id" | "timestamp"> = {
       role: "user",
-      content,
+      content: content + (files && files.length > 0 ? ` [${files.length} file(s) attached]` : ''),
     };
     
     // If it's a new chat, we don't have a chat ID yet
@@ -103,7 +117,8 @@ export default function Chat() {
         currentChatId || "",
         content,
         currentModel as any, // Type conversion since the API and context use different model types
-        systemPromptToUse || currentChat?.systemPrompt
+        systemPromptToUse || currentChat?.systemPrompt,
+        files
       );
       
       // Add AI response
@@ -142,6 +157,13 @@ export default function Chat() {
           model: currentModel,
         });
       }
+      
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive",
+        duration: 5000,
+      });
     } finally {
       setIsLoading(false);
     }

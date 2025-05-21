@@ -1,9 +1,14 @@
 
 import time
 import google.generativeai as genai
+import os
+from dotenv import load_dotenv
 
-# Hardcoded API key (not recommended for production, but for debugging)
-GEMINI_API_KEY = "AIzaSyD7H1yePFJWYW3zdtk7LktQz7WpBfU9LLc"
+# Load environment variables
+load_dotenv()
+
+# API key from environment variables or hardcoded for development
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyD7H1yePFJWYW3zdtk7LktQz7WpBfU9LLc")
 
 # Use the correct model name
 GEMINI_MODEL = "gemini-pro"
@@ -27,22 +32,28 @@ def ask_gemini(messages):
         system_message = next((msg["content"] for msg in messages if msg["role"] == "system"), None)
         print(f"System message found: {'Yes' if system_message else 'No'}")
         
-        # Format the conversation history
-        formatted_messages = []
-        for msg in messages:
-            if msg["role"] == "system":
-                continue  # Skip system message as it's handled separately
-            formatted_messages.append(f"{msg['role'].upper()}: {msg['content']}")
+        # Format conversation as a Gemini chat
+        gemini_chat = model.start_chat()
         
-        # Combine all messages into a single prompt
-        prompt = "\n".join(formatted_messages)
-        print(f"Prompt length: {len(prompt)} characters")
+        formatted_content = ""
+        
+        # Add system message at the beginning if it exists
+        if system_message:
+            formatted_content += f"SYSTEM: {system_message}\n\n"
+        
+        # Add the conversation history
+        for msg in messages:
+            if msg["role"] != "system":  # Skip system message as we've already handled it
+                formatted_content += f"{msg['role'].upper()}: {msg['content']}\n\n"
+        
+        print(f"Prompt length: {len(formatted_content)} characters")
         
         # Generate response with timeout
         print("Sending request to Gemini API...")
         start_time = time.time()
+        
         response = model.generate_content(
-            prompt,
+            formatted_content,
             generation_config={
                 "temperature": 0.7,
                 "top_p": 0.8,
@@ -50,6 +61,7 @@ def ask_gemini(messages):
                 "max_output_tokens": 1024,
             }
         )
+        
         end_time = time.time()
         print(f"Request completed in {end_time - start_time:.2f} seconds")
         
