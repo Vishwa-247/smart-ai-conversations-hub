@@ -2,15 +2,22 @@
 import time
 import google.generativeai as genai
 import os
+from dotenv import load_dotenv
 
-# API key from environment variables or hardcoded for development
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyD7H1yePFJWYW3zdtk7LktQz7WpBfU9LLc")
+# Load environment variables
+load_dotenv()
+
+# API key from environment variables
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 # Use the correct model name
 GEMINI_MODEL = "gemini-pro"
 
 # Configure the Gemini API
 try:
+    if not GEMINI_API_KEY:
+        print("Warning: GEMINI_API_KEY environment variable not set")
+        
     genai.configure(api_key=GEMINI_API_KEY)
     print("Successfully configured Gemini API")
 except Exception as e:

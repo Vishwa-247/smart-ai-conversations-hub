@@ -1,8 +1,14 @@
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, FileAudio, FileImage, File, Upload } from "lucide-react";
+import { Send, Plus, FileAudio, FileImage, File } from "lucide-react";
 import { FormEvent, useState, useRef } from "react";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface ChatInputProps {
   onSend: (message: string, files?: File[]) => void;
@@ -93,62 +99,59 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
           multiple
         />
         
-        <div className="flex gap-2 mb-2">
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="rounded-lg"
-            onClick={() => triggerFileInput('image/*')}
-            disabled={disabled}
-          >
-            <FileImage className="h-4 w-4 mr-1" />
-            Image
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="rounded-lg"
-            onClick={() => triggerFileInput('audio/*')}
-            disabled={disabled}
-          >
-            <FileAudio className="h-4 w-4 mr-1" />
-            Audio
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="rounded-lg"
-            onClick={() => triggerFileInput('*')}
-            disabled={disabled}
-          >
-            <Upload className="h-4 w-4 mr-1" />
-            File
-          </Button>
-        </div>
-        
         {renderSelectedFiles()}
         
-        <Textarea
-          placeholder="Type your message here..."
-          className="resize-none pr-12 min-h-[50px] max-h-[200px] rounded-xl border border-foreground/20 shadow-sm bg-background"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          disabled={disabled}
-          rows={1}
-        />
-        <Button
-          size="icon"
-          type="submit"
-          disabled={(input.trim() === '' && files.length === 0) || disabled}
-          className="absolute right-2 bottom-1.5 h-9 w-9 rounded-lg bg-primary hover:bg-primary/90 transition-all"
-        >
-          <Send className="h-4 w-4" />
-          <span className="sr-only">Send message</span>
-        </Button>
+        <div className="relative">
+          <Textarea
+            placeholder="Type your message here..."
+            className="resize-none pr-24 min-h-[50px] max-h-[200px] rounded-xl border border-foreground/20 shadow-sm bg-background"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={disabled}
+            rows={1}
+          />
+          
+          <div className="absolute right-2 bottom-1.5 flex gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-9 w-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
+                  disabled={disabled}
+                >
+                  <Plus className="h-5 w-5" />
+                  <span className="sr-only">Add files</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => triggerFileInput('image/*')}>
+                  <FileImage className="h-4 w-4 mr-2" />
+                  <span>Image</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => triggerFileInput('audio/*')}>
+                  <FileAudio className="h-4 w-4 mr-2" />
+                  <span>Audio</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => triggerFileInput('*')}>
+                  <File className="h-4 w-4 mr-2" />
+                  <span>Document</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
+            <Button
+              size="icon"
+              type="submit"
+              disabled={input.trim() === '' && files.length === 0 || disabled}
+              className="h-9 w-9 rounded-lg bg-primary hover:bg-primary/90 transition-all"
+            >
+              <Send className="h-4 w-4" />
+              <span className="sr-only">Send message</span>
+            </Button>
+          </div>
+        </div>
       </div>
       <div className="text-xs text-center mt-2 text-muted-foreground">
         Press Enter to send

@@ -4,6 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Settings } from "lucide-react";
+import { useToast } from "./ui/use-toast";
 
 interface SystemPromptInputProps {
   value: string;
@@ -23,6 +24,7 @@ export default function SystemPromptInput({
   readOnly = false 
 }: SystemPromptInputProps) {
   const [tempValue, setTempValue] = useState(value);
+  const { toast } = useToast();
 
   // Update tempValue whenever value changes from outside
   useEffect(() => {
@@ -31,7 +33,14 @@ export default function SystemPromptInput({
 
   const handleSave = () => {
     onChange(tempValue);
-    if (onSave) onSave();
+    if (onSave) {
+      onSave();
+      toast({
+        title: "System prompt updated",
+        description: "Your custom instructions have been saved",
+        duration: 3000,
+      });
+    }
   };
 
   return (

@@ -1,8 +1,8 @@
 
 import axios from 'axios';
 
-// API base URL - change this to your Flask server's address
-const API_BASE_URL = 'http://localhost:5000/api';
+// API base URL - use environment variable with fallback
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
 // API client instance
 const apiClient = axios.create({
@@ -12,7 +12,7 @@ const apiClient = axios.create({
   },
 });
 
-export type ModelType = 'chatgpt' | 'gemini' | 'claude' | string;
+export type ModelType = 'gemini-pro' | 'claude-3-sonnet' | 'grok-1';
 
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -64,54 +64,13 @@ interface ChatHistoryResponse {
   error?: string;
 }
 
-interface CustomModelRequest {
-  id: string;
-  name: string;
-  apiEndpoint: string;
-}
-
-interface CustomModelResponse {
-  success: boolean;
-  message: string;
-  error?: string;
-}
-
-interface SystemPromptUpdateRequest {
-  system_prompt: string;
-}
-
-interface SystemPromptUpdateResponse {
-  success: boolean;
-  message: string;
-  error?: string;
-}
-
 // Send a chat message to the backend
-export const sendChatMessage = async (request: ChatRequest): Promise<ChatResponse> => {
+const sendChatMessage = async (request: ChatRequest): Promise<ChatResponse> => {
   try {
-    // Check if this is a custom model
-    if (!['chatgpt', 'gemini', 'claude'].includes(request.model)) {
-      // Load custom models from localStorage
-      const customModelsStr = localStorage.getItem('custom-models');
-      if (customModelsStr) {
-        const customModels: CustomModel[] = JSON.parse(customModelsStr);
-        const customModel = customModels.find(m => m.id === request.model);
-        
-        if (customModel) {
-          // Add the custom model details to the request
-          request.custom_model = customModel;
-        }
-      }
-    }
-    
     // Handle file uploads if present
     if (request.files && request.files.length > 0) {
-      // For now, this is a placeholder for file handling
-      // In a real implementation, you would use FormData to upload files
       console.log(`Preparing to upload ${request.files.length} files`);
-      
       // We would need to implement a multipart/form-data upload here
-      // This is just a placeholder until backend support is added
     }
     
     const response = await apiClient.post<ChatResponse>('/chat', request);
@@ -125,7 +84,7 @@ export const sendChatMessage = async (request: ChatRequest): Promise<ChatRespons
 };
 
 // Get all chats for the current user
-export const getChats = async (): Promise<Chat[]> => {
+const getChats = async (): Promise<Chat[]> => {
   try {
     const response = await apiClient.get<ChatsResponse>('/chats');
     return response.data.chats || [];
@@ -138,7 +97,7 @@ export const getChats = async (): Promise<Chat[]> => {
 };
 
 // Get chat history for a specific conversation
-export const getChatHistory = async (chatId: string, limit = 50): Promise<ChatMessage[]> => {
+const getChatHistory = async (chatId: string, limit = 50): Promise<ChatMessage[]> => {
   try {
     const response = await apiClient.get<ChatHistoryResponse>(`/chats/${chatId}?limit=${limit}`);
     return response.data.messages || [];
@@ -151,11 +110,14 @@ export const getChatHistory = async (chatId: string, limit = 50): Promise<ChatMe
 };
 
 // Delete a chat
-export const deleteChat = async (chatId: string): Promise<boolean> => {
+const deleteChat = async (chatId: string): Promise<boolean> => {
   try {
+    console.log(`Deleting chat with ID: ${chatId}`);
     const response = await apiClient.delete(`/chats/${chatId}`);
+    console.log("Delete response:", response.data);
     return response.data.success;
   } catch (error) {
+    console.error("Error deleting chat:", error);
     if (axios.isAxiosError(error) && error.response?.data?.error) {
       throw new Error(error.response.data.error);
     }
@@ -164,13 +126,16 @@ export const deleteChat = async (chatId: string): Promise<boolean> => {
 };
 
 // Update system prompt for a chat
-export const updateSystemPrompt = async (chatId: string, systemPrompt: string): Promise<boolean> => {
+const updateSystemPrompt = async (chatId: string, systemPrompt: string): Promise<boolean> => {
   try {
-    const response = await apiClient.patch<SystemPromptUpdateResponse>(`/chats/${chatId}/system-prompt`, {
+    console.log(`Updating system prompt for chat ${chatId}:`, systemPrompt);
+    const response = await apiClient.patch(`/chats/${chatId}/system-prompt`, {
       system_prompt: systemPrompt
     });
+    console.log("Update system prompt response:", response.data);
     return response.data.success;
   } catch (error) {
+    console.error("Error updating system prompt:", error);
     if (axios.isAxiosError(error) && error.response?.data?.error) {
       throw new Error(error.response.data.error);
     }
@@ -178,21 +143,8 @@ export const updateSystemPrompt = async (chatId: string, systemPrompt: string): 
   }
 };
 
-// Save a custom model configuration
-export const saveCustomModel = async (model: CustomModelRequest): Promise<boolean> => {
-  try {
-    const response = await apiClient.post<CustomModelResponse>('/models/custom', model);
-    return response.data.success;
-  } catch (error) {
-    if (axios.isAxiosError(error) && error.response?.data?.error) {
-      throw new Error(error.response.data.error);
-    }
-    throw new Error('Failed to save custom model');
-  }
-};
-
 // Send a message to the API, handling both new chats and existing chats
-export const sendMessage = async (
+const sendMessage = async (
   chatId: string,
   message: string,
   model: ModelType,
@@ -224,13 +176,22 @@ export const sendMessage = async (
   };
 };
 
-// Create an apiService object to group all API functions
+// Export API functions as a service object
 export const apiService = {
   sendChatMessage,
   getChats,
   getChatHistory,
   deleteChat,
-  saveCustomModel,
+  sendMessage,
+  updateSystemPrompt,
+};
+
+// Also export individual functions for compatibility
+export {
+  sendChatMessage,
+  getChats,
+  getChatHistory,
+  deleteChat,
   sendMessage,
   updateSystemPrompt,
 };

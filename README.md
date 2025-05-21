@@ -1,126 +1,73 @@
 
 # AI Chat Application
 
-A modern chat application that allows users to interact with various AI language models through a clean, responsive interface.
+This is a chat application using multiple AI models like Gemini, Claude, and Grok.
 
-## Features
+## Setup
 
-- **Multiple AI Models**: Support for GPT-4o, Claude, and Gemini models
-- **Responsive UI**: Works on desktop and mobile devices
-- **Theme Support**: Light and dark mode with smooth transitions
-- **Chat History**: View and manage previous conversations
-- **Smooth Animations**: Powered by GSAP for a polished user experience
+### 1. Environment Variables
 
-## Technology Stack
+#### Backend
 
-### Frontend
-- React 18 with TypeScript
-- Vite for fast builds
-- TailwindCSS for styling
-- GSAP for animations
-- React Query for data fetching
-- React Markdown for message formatting
+1. Copy the `.env.example` file to `.env` in the server directory:
+   ```
+   cp server/.env.example server/.env
+   ```
+2. Edit the `server/.env` file and add your API keys:
+   ```
+   OPENAI_API_KEY=your_openai_api_key_here
+   GEMINI_API_KEY=your_gemini_api_key_here
+   ANTHROPIC_API_KEY=your_anthropic_api_key_here
+   GROK_API_KEY=your_grok_api_key_here
+   ```
 
-### Backend
-- Flask for API endpoints
-- MongoDB for data storage
-- Support for multiple AI services:
-  - OpenAI GPT models
-  - Google Gemini
-  - Anthropic Claude
+#### Frontend
 
-## Setup Requirements
+1. Copy the `.env.example` file to `.env` in the root directory:
+   ```
+   cp .env.example .env
+   ```
+2. Edit the `.env` file if needed to customize the API URL:
+   ```
+   VITE_API_BASE_URL=http://localhost:5000/api
+   ```
 
-- Node.js (v16 or higher)
-- Python (v3.9 or higher)
-- MongoDB (v4.4 or higher)
-- API keys for the AI services you plan to use
+### 2. Install Dependencies
 
-## Local Setup Instructions
-
-### 1. MongoDB Setup
-- Install MongoDB on your system
-- Start the MongoDB service:
-  ```bash
-  # On Windows
-  # MongoDB typically runs as a service after installation
-
-  # On macOS
-  brew services start mongodb-community
-
-  # On Linux
-  sudo systemctl start mongod
-  ```
-- MongoDB will run on `mongodb://localhost:27017/` by default
-
-### 2. Backend Setup
-```bash
-# Navigate to server directory
+#### Backend
+```
 cd server
-
-# Create a virtual environment
-python -m venv venv
-
-# Activate the virtual environment
-# On Windows
-venv\Scripts\activate
-# On macOS/Linux
-source venv/bin/activate
-
-# Install dependencies
 pip install -r requirements.txt
+```
 
-# Create a .env file (optional for OpenAI and Claude)
-# The .env file should contain:
-# OPENAI_API_KEY=your_openai_api_key
-# ANTHROPIC_API_KEY=your_anthropic_api_key
-# Note: Gemini API key is hardcoded for development
+#### Frontend
+```
+npm install
+```
 
-# Start the Flask server
+### 3. Run the Application
+
+#### Backend
+```
+cd server
 python app.py
 ```
 
-### 3. Frontend Setup
-```bash
-# In the project root directory
-npm install
-
-# Start the development server
+#### Frontend
+```
 npm run dev
 ```
 
-### 4. Access the Application
-- Open your browser and go to: `http://localhost:5173`
-- The app should connect to the backend at: `http://localhost:5000`
+## Features
 
-## Using the Application
-
-1. **Start a New Chat**: Click the "New Chat" button in the sidebar
-2. **Choose a Model**: Select GPT-4o, Claude, or Gemini from the model selector
-3. **Send a Message**: Type your message and press Enter or click the send button
-4. **View History**: Previous conversations appear in the sidebar
-5. **Toggle Theme**: Switch between light and dark modes using the theme toggle
+- Chat with multiple AI models (Gemini, Claude, Grok)
+- Customize system prompts for each conversation
+- Upload images, audio, and other files
+- Save and manage multiple conversations
 
 ## Troubleshooting
 
-- **Backend Connection Issues**: Ensure the Flask server is running on port 5000
-- **MongoDB Connection Error**: Verify MongoDB is running on the default port
-- **Model Response Errors**: Check that you've set up the appropriate API keys
-
-## Project Structure
-
-```
-├── src/                  # Frontend React code
-│   ├── components/       # React components
-│   ├── contexts/         # Context providers
-│   ├── hooks/            # Custom React hooks
-│   ├── services/         # API services
-│   ├── pages/            # Application pages
-│   └── lib/              # Utility functions
-├── server/               # Backend Flask code
-│   ├── app.py            # Main Flask application
-│   ├── requirements.txt  # Python dependencies
-│   ├── db/               # Database connection and operations
-│   └── llm_clients/      # AI service integrations
-└── README.md             # Project documentation
-```
+If you encounter issues with model responses:
+1. Check that your API keys are correctly set in the `.env` file
+2. Ensure the backend server is running and accessible
+3. Check browser console for any error messages

@@ -5,11 +5,11 @@ import ChatInput from "./ChatInput";
 import ChatMessage from "./ChatMessage";
 import SystemPromptInput from "./SystemPromptInput";
 import { useEffect, useRef, useState } from "react";
-import { apiService } from "@/services/api";
 import { Message } from "@/contexts/ChatContext";
 import { Button } from "./ui/button";
 import { Settings } from "lucide-react";
 import { useToast } from "./ui/use-toast";
+import { useSystemPrompt } from "@/hooks/useSystemPrompt";
 
 export default function Chat() {
   const { 
@@ -25,7 +25,7 @@ export default function Chat() {
   
   const [showSystemPrompt, setShowSystemPrompt] = useState<boolean>(false);
   const [systemPrompt, setSystemPrompt] = useState<string>("");
-  const [isEditingSystemPrompt, setIsEditingSystemPrompt] = useState<boolean>(false);
+  const { isEditing: isEditingSystemPrompt, toggleEditMode: toggleSystemPromptEditor, saveSystemPrompt } = useSystemPrompt();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   
@@ -59,17 +59,12 @@ export default function Chat() {
   // Handle saving system prompt
   const handleSaveSystemPrompt = async () => {
     if (currentChatId) {
+      // First update locally
       updateSystemPrompt(currentChatId, systemPrompt);
       
-      // Call API to update system prompt on the backend
+      // Then update on the server
       try {
-        await apiService.updateSystemPrompt(currentChatId, systemPrompt);
-        
-        toast({
-          title: "System prompt updated",
-          description: "Your custom instructions have been saved",
-          duration: 3000,
-        });
+        await saveSystemPrompt(currentChatId, systemPrompt);
       } catch (error) {
         console.error("Error updating system prompt:", error);
         toast({
@@ -79,14 +74,7 @@ export default function Chat() {
           duration: 5000,
         });
       }
-      
-      setIsEditingSystemPrompt(false);
     }
-  };
-  
-  // Toggle system prompt editor for existing chats
-  const toggleSystemPromptEditor = () => {
-    setIsEditingSystemPrompt(!isEditingSystemPrompt);
   };
   
   // Handle sending a message
@@ -112,11 +100,11 @@ export default function Chat() {
     setIsLoading(true);
     
     try {
-      // Call API
-      const response = await apiService.sendMessage(
+      // Call API with selected files
+      const apiResponse = await (window as any).apiService.sendMessage(
         currentChatId || "",
         content,
-        currentModel as any, // Type conversion since the API and context use different model types
+        currentModel,
         systemPromptToUse || currentChat?.systemPrompt,
         files
       );
@@ -125,19 +113,19 @@ export default function Chat() {
       if (currentChatId) {
         // For existing chats
         addMessage(currentChatId, {
-          role: response.role,
-          content: response.content,
+          role: apiResponse.role,
+          content: apiResponse.content,
           model: currentModel,
         });
-      } else if (response.conversation_id) {
+      } else if (apiResponse.conversation_id) {
         // For new chats, we need to add both user message and AI response
-        const newChatId = response.conversation_id;
+        const newChatId = apiResponse.conversation_id;
         
         // The context will handle creating the chat
         addMessage(newChatId, userMessage);
         addMessage(newChatId, {
-          role: response.role,
-          content: response.content,
+          role: apiResponse.role,
+          content: apiResponse.content,
           model: currentModel,
         });
         
