@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect } from 'react';
 import { apiService } from '@/services/api';
 import { Chat, ChatContextType, Message, ModelType } from '@/types/chat';
@@ -13,12 +12,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
   // Create a new chat with the specified model
   const createChat = (model: ModelType, systemPrompt?: string) => {
-    // When creating a new chat, system prompt is now required
-    if (!systemPrompt) {
-      console.warn("System prompt is required to create a new chat");
-      return;
-    }
-    
+    // System prompt is now optional
     const newChatId = Date.now().toString();
     const newChat: Chat = {
       id: newChatId,
@@ -27,7 +21,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       model,
       createdAt: new Date(),
       updatedAt: new Date(),
-      systemPrompt,
+      systemPrompt, // Optional - can be undefined
     };
     
     setChats((prev) => [newChat, ...prev]);
@@ -128,11 +122,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
   // Update system prompt for a specific chat
   const updateSystemPrompt = (chatId: string, systemPrompt: string) => {
-    if (!systemPrompt.trim()) {
-      console.warn("System prompt cannot be empty");
-      return;
-    }
-    
+    // Now we allow empty system prompts
     setChats((prev) => {
       return prev.map((chat) => {
         if (chat.id === chatId) {

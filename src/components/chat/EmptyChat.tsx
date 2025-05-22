@@ -18,7 +18,7 @@ export default function EmptyChat({
   onSendMessage,
   isLoading,
   showSystemPrompt,
-  isRequired = false
+  isRequired = false // Default to not required
 }: EmptyChatProps) {
   return (
     <div className="flex h-screen flex-col">
@@ -30,17 +30,19 @@ export default function EmptyChat({
               ? "Define how your AI assistant should behave before starting the conversation." 
               : "Start a new conversation with any of our AI models."}
           </p>
-          <div className="mb-6">
-            <SystemPromptInput 
-              value={systemPrompt} 
-              onChange={setSystemPrompt} 
-              required={isRequired}
-              readOnly={false}
-            />
-          </div>
+          {showSystemPrompt && (
+            <div className="mb-6">
+              <SystemPromptInput 
+                value={systemPrompt} 
+                onChange={setSystemPrompt} 
+                required={isRequired}
+                readOnly={false}
+              />
+            </div>
+          )}
           <ChatInput 
             onSend={(content, files) => {
-              // Use user message as system prompt if system prompt is empty
+              // Optional: Use user message as system prompt if system prompt is empty
               if (isRequired && !systemPrompt.trim()) {
                 setSystemPrompt(content);
               }

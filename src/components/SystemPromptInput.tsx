@@ -34,17 +34,7 @@ export default function SystemPromptInput({
   }, [value]);
 
   const handleSave = () => {
-    // Validate if required
-    if (required && !tempValue.trim()) {
-      toast({
-        title: "System prompt required",
-        description: "Please provide instructions for the AI assistant.",
-        variant: "destructive",
-        duration: 3000,
-      });
-      return;
-    }
-    
+    // No validation needed since it's optional
     onChange(tempValue);
     if (onSave) {
       onSave();
@@ -62,13 +52,8 @@ export default function SystemPromptInput({
         <Label htmlFor="system-prompt" className="text-sm font-medium">
           {readOnly 
             ? "System Instructions" 
-            : required 
-              ? "System Instructions (required)" 
-              : "System Instructions (optional)"
+            : "System Instructions (optional)"
           }
-          {required && !readOnly && (
-            <span className="text-destructive ml-1">*</span>
-          )}
         </Label>
         {toggleEdit && (
           <Button 
@@ -85,16 +70,12 @@ export default function SystemPromptInput({
       
       <Textarea
         id="system-prompt"
-        placeholder={required 
-          ? "Define how the AI assistant should behave (required)" 
-          : "Set custom instructions for the AI, e.g., 'You are a helpful coding assistant specialized in React...'"
-        }
+        placeholder="Set custom instructions for the AI, e.g., 'You are a helpful coding assistant specialized in React...'"
         value={isEditing ? tempValue : value}
         onChange={(e) => setTempValue(e.target.value)}
-        className={`min-h-[100px] resize-none rounded-xl ${required && !tempValue.trim() && !readOnly ? 'border-destructive' : ''}`}
-        // Important: Always make it editable
+        className="min-h-[100px] resize-none rounded-xl"
         readOnly={readOnly}
-        required={required}
+        required={false} // Never required
       />
       
       {isEditing && (
@@ -111,7 +92,6 @@ export default function SystemPromptInput({
             onClick={handleSave} 
             size="sm"
             className="rounded-lg"
-            disabled={required && !tempValue.trim()}
           >
             Save Changes
           </Button>
@@ -120,10 +100,7 @@ export default function SystemPromptInput({
       
       {!isEditing && !readOnly && (
         <p className="text-xs text-muted-foreground">
-          {required 
-            ? "These instructions define how the AI will behave throughout your conversation." 
-            : "These instructions shape how the AI responds. Leave blank for default behavior."
-          }
+          These instructions shape how the AI responds. Leave blank for default behavior.
         </p>
       )}
     </div>

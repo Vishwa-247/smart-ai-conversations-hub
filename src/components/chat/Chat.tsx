@@ -31,7 +31,7 @@ export default function Chat() {
   useEffect(() => {
     if (!currentChatId || (currentChat && currentChat.messages.length === 0)) {
       setShowSystemPrompt(true);
-      setIsSystemPromptRequired(false); // Allow empty system prompt
+      setIsSystemPromptRequired(false); // Never require system prompt
     } else {
       setIsSystemPromptRequired(false);
     }
@@ -49,14 +49,13 @@ export default function Chat() {
   
   // Custom send handler to validate system prompt and use message as system prompt if needed
   const handleSendWithValidation = (content: string, files?: File[]) => {
-    // For new chats with no system prompt, use the first message as the system prompt
-    if ((!currentChatId || (currentChat && currentChat.messages.length === 0)) && !systemPrompt.trim()) {
+    // For new chats, we can optionally use first message as system prompt
+    if ((!currentChatId || (currentChat && currentChat.messages.length === 0)) && !systemPrompt.trim() && showSystemPrompt) {
+      // Optionally use first message as system prompt
       setSystemPrompt(content);
-      handleSendMessage(content, files);
-      return;
     }
     
-    // Otherwise, just send the message normally
+    // Send message normally regardless of system prompt
     handleSendMessage(content, files);
   };
   
@@ -68,7 +67,7 @@ export default function Chat() {
         onSendMessage={handleSendWithValidation}
         isLoading={isLoading}
         showSystemPrompt={true} // Always show for new chats
-        isRequired={false} // Allow using message as system prompt
+        isRequired={false} // Never require system prompt
       />
     );
   }
