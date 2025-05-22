@@ -35,7 +35,7 @@ export default function EmptyChat({
               value={systemPrompt} 
               onChange={setSystemPrompt} 
               required={isRequired}
-              readOnly={false} // Ensure it's never readonly
+              readOnly={false}
             />
           </div>
           <ChatInput 

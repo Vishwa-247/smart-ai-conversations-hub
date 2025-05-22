@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import ChatHeader from "@/components/ChatHeader";
 import ChatInput from "@/components/ChatInput";
@@ -23,14 +24,14 @@ export default function Chat() {
     getSystemPrompt
   } = useChatActions();
   
-  const [isSystemPromptRequired, setIsSystemPromptRequired] = useState(true);
+  const [isSystemPromptRequired, setIsSystemPromptRequired] = useState(false);
   const { toast } = useToast();
   
   // Show system prompt input when starting a new chat or when already in a chat with no messages
   useEffect(() => {
     if (!currentChatId || (currentChat && currentChat.messages.length === 0)) {
       setShowSystemPrompt(true);
-      setIsSystemPromptRequired(true);
+      setIsSystemPromptRequired(false); // Allow empty system prompt
     } else {
       setIsSystemPromptRequired(false);
     }

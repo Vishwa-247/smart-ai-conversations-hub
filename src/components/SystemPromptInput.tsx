@@ -92,7 +92,8 @@ export default function SystemPromptInput({
         value={isEditing ? tempValue : value}
         onChange={(e) => setTempValue(e.target.value)}
         className={`min-h-[100px] resize-none rounded-xl ${required && !tempValue.trim() && !readOnly ? 'border-destructive' : ''}`}
-        readOnly={false} // Ensuring input is always editable
+        // Important: Always make it editable
+        readOnly={readOnly}
         required={required}
       />
       
