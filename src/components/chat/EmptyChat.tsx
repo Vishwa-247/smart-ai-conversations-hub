@@ -35,9 +35,19 @@ export default function EmptyChat({
               value={systemPrompt} 
               onChange={setSystemPrompt} 
               required={isRequired}
+              readOnly={false} // Ensure it's never readonly
             />
           </div>
-          <ChatInput onSend={onSendMessage} disabled={isLoading || (isRequired && !systemPrompt.trim())} />
+          <ChatInput 
+            onSend={(content, files) => {
+              // Use user message as system prompt if system prompt is empty
+              if (isRequired && !systemPrompt.trim()) {
+                setSystemPrompt(content);
+              }
+              onSendMessage(content, files);
+            }} 
+            disabled={isLoading || (isRequired && !systemPrompt.trim())} 
+          />
         </div>
       </div>
     </div>

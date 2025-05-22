@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import ChatHeader from "@/components/ChatHeader";
 import ChatInput from "@/components/ChatInput";
@@ -47,18 +46,16 @@ export default function Chat() {
     }
   }, [currentChatId, currentChat, getSystemPrompt, setShowSystemPrompt, setSystemPrompt]);
   
-  // Custom send handler to validate system prompt
+  // Custom send handler to validate system prompt and use message as system prompt if needed
   const handleSendWithValidation = (content: string, files?: File[]) => {
-    // For new chats, require system prompt
+    // For new chats with no system prompt, use the first message as the system prompt
     if ((!currentChatId || (currentChat && currentChat.messages.length === 0)) && !systemPrompt.trim()) {
-      toast({
-        title: "System prompt required",
-        description: "Please provide instructions for the AI assistant before starting the chat.",
-        variant: "destructive",
-      });
+      setSystemPrompt(content);
+      handleSendMessage(content, files);
       return;
     }
     
+    // Otherwise, just send the message normally
     handleSendMessage(content, files);
   };
   
@@ -70,7 +67,7 @@ export default function Chat() {
         onSendMessage={handleSendWithValidation}
         isLoading={isLoading}
         showSystemPrompt={true} // Always show for new chats
-        isRequired={isSystemPromptRequired}
+        isRequired={false} // Allow using message as system prompt
       />
     );
   }
