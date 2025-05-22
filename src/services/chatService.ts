@@ -114,6 +114,3 @@ export const sendMessage = async (
     conversation_id: response.conversation_id
   };
 };
-
-// Fix missing axios import
-import axios from 'axios';
