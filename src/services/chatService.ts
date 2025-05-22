@@ -1,5 +1,4 @@
 
-import axios from 'axios';
 import { apiClient } from './apiClient';
 import { ChatRequest, ChatResponse, Chat, ChatsResponse, ChatHistoryResponse, ChatMessage, ModelType } from './types';
 
@@ -16,12 +15,12 @@ export const sendChatMessage = async (request: ChatRequest): Promise<ChatRespons
     const response = await apiClient.post<ChatResponse>('/chat', request);
     console.log('Response from backend:', response.data);
     return response.data;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in sendChatMessage:', error);
-    if (axios.isAxiosError(error) && error.response?.data?.error) {
-      throw new Error(error.response.data.error);
+    if (error.response?.data?.detail) {
+      throw new Error(error.response.data.detail);
     }
-    throw new Error('Failed to connect to the server');
+    throw new Error(error.message || 'Failed to connect to the server');
   }
 };
 
@@ -30,11 +29,12 @@ export const getChats = async (): Promise<Chat[]> => {
   try {
     const response = await apiClient.get<ChatsResponse>('/chats');
     return response.data.chats || [];
-  } catch (error) {
-    if (axios.isAxiosError(error) && error.response?.data?.error) {
-      throw new Error(error.response.data.error);
+  } catch (error: any) {
+    console.error('Error in getChats:', error);
+    if (error.response?.data?.detail) {
+      throw new Error(error.response.data.detail);
     }
-    throw new Error('Failed to fetch chats');
+    throw new Error(error.message || 'Failed to fetch chats');
   }
 };
 
@@ -43,11 +43,12 @@ export const getChatHistory = async (chatId: string, limit = 50): Promise<ChatMe
   try {
     const response = await apiClient.get<ChatHistoryResponse>(`/chats/${chatId}?limit=${limit}`);
     return response.data.messages || [];
-  } catch (error) {
-    if (axios.isAxiosError(error) && error.response?.data?.error) {
-      throw new Error(error.response.data.error);
+  } catch (error: any) {
+    console.error('Error in getChatHistory:', error);
+    if (error.response?.data?.detail) {
+      throw new Error(error.response.data.detail);
     }
-    throw new Error('Failed to fetch chat history');
+    throw new Error(error.message || 'Failed to fetch chat history');
   }
 };
 
@@ -58,12 +59,12 @@ export const deleteChat = async (chatId: string): Promise<boolean> => {
     const response = await apiClient.delete(`/chats/${chatId}`);
     console.log("Delete response:", response.data);
     return response.data.success;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error deleting chat:", error);
-    if (axios.isAxiosError(error) && error.response?.data?.error) {
-      throw new Error(error.response.data.error);
+    if (error.response?.data?.detail) {
+      throw new Error(error.response.data.detail);
     }
-    throw new Error('Failed to delete chat');
+    throw new Error(error.message || 'Failed to delete chat');
   }
 };
 
@@ -76,12 +77,12 @@ export const updateSystemPrompt = async (chatId: string, systemPrompt: string): 
     });
     console.log("Update system prompt response:", response.data);
     return response.data.success;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error updating system prompt:", error);
-    if (axios.isAxiosError(error) && error.response?.data?.error) {
-      throw new Error(error.response.data.error);
+    if (error.response?.data?.detail) {
+      throw new Error(error.response.data.detail);
     }
-    throw new Error('Failed to update system prompt');
+    throw new Error(error.message || 'Failed to update system prompt');
   }
 };
 

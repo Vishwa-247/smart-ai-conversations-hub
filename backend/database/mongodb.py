@@ -23,7 +23,7 @@ class MongoDB:
         self.chats = self.db[CHATS_COLLECTION]
         self.messages = self.db[MESSAGES_COLLECTION]
     
-    def create_chat(self, user_id="anonymous", title="New Chat", model="chatgpt", system_prompt=None):
+    def create_chat(self, user_id="anonymous", title="New Chat", model="gpt-4o", system_prompt=None):
         """Create a new chat and return its ID"""
         chat_data = {
             "user_id": user_id,

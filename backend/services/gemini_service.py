@@ -7,23 +7,23 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-# API key from environment variables or hardcoded for development
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyD7H1yePFJWYW3zdtk7LktQz7WpBfU9LLc")
+# API key from environment variables
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 # Use the correct model name
 GEMINI_MODEL = "gemini-pro"
 
 # Configure the Gemini API
-try:
-    genai.configure(api_key=GEMINI_API_KEY)
-    print("Successfully configured Gemini API")
-except Exception as e:
-    print(f"Error configuring Gemini API: {str(e)}")
-    raise
-
 def ask_gemini(messages):
+    """Send message to Gemini and return response"""
     try:
+        if not GEMINI_API_KEY:
+            return "Gemini API key not configured. Please set GEMINI_API_KEY in .env file."
+            
         print("Starting Gemini request...")
+        # Configure the API
+        genai.configure(api_key=GEMINI_API_KEY)
+        
         # Create the model instance
         model = genai.GenerativeModel(GEMINI_MODEL)
         print("Model instance created")
@@ -31,9 +31,6 @@ def ask_gemini(messages):
         # Extract the system message if it exists
         system_message = next((msg["content"] for msg in messages if msg["role"] == "system"), None)
         print(f"System message found: {'Yes' if system_message else 'No'}")
-        
-        # Format conversation as a Gemini chat
-        gemini_chat = model.start_chat()
         
         formatted_content = ""
         
@@ -76,4 +73,4 @@ def ask_gemini(messages):
         print(f"Detailed error in Gemini service: {str(e)}")
         import traceback
         print(f"Full traceback: {traceback.format_exc()}")
-        raise Exception(f"Failed to get response from Gemini: {str(e)}")
+        return f"An error occurred with Gemini: {str(e)}"

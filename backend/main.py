@@ -1,3 +1,4 @@
+
 from fastapi import FastAPI, File, Form, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -6,7 +7,7 @@ import os
 from datetime import datetime
 import json
 
-# Import existing services
+# Import services
 from services.openai_service import ask_openai
 from services.gemini_service import ask_gemini
 from services.claude_service import ask_claude
@@ -20,8 +21,8 @@ app = FastAPI(title="AI Chat API", version="1.0")
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000",
-                  "http://localhost:8080", "http://127.0.0.1:8080"],
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", 
+                   "http://localhost:8080", "http://127.0.0.1:8080"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -30,7 +31,7 @@ app.add_middleware(
 # Initialize MongoDB client
 mongo_db = MongoDB()
 
-# In-memory conversation cache (temporary, before saving to MongoDB)
+# In-memory conversation cache
 conversations_cache = {}
 
 # Define request and response models
@@ -60,18 +61,13 @@ async def chat(request: MessageRequest):
         # Create a new conversation if it doesn't exist
         if not conversation_id:
             print("Creating new conversation...")
-            
-            # Require system prompt for new chats
-            if not system_prompt:
-                raise HTTPException(status_code=400, detail="System prompt is required for new chats")
-                
             conversation_id = mongo_db.create_chat(model=model, title=message[:30], system_prompt=system_prompt)
-            print(f"New conversation created with ID: {conversation_id} and custom system prompt")
+            print(f"New conversation created with ID: {conversation_id} and system prompt")
             
             # Initialize with provided system message in cache
             conversations_cache[conversation_id] = [{
                 "role": "system",
-                "content": system_prompt
+                "content": system_prompt or "You are a helpful AI assistant."
             }]
         elif conversation_id not in conversations_cache:
             print(f"Loading conversation history for ID: {conversation_id}")
@@ -80,10 +76,10 @@ async def chat(request: MessageRequest):
             
             # Get system prompt from the database
             chat_data = mongo_db.get_chat_by_id(conversation_id)
-            system_prompt_content = chat_data.get('system_prompt')
+            system_prompt_content = chat_data.get('system_prompt') if chat_data else None
             
             if not system_prompt_content:
-                raise HTTPException(status_code=400, detail="System prompt not found for this chat")
+                system_prompt_content = "You are a helpful AI assistant."
                 
             # Convert to the format needed by LLM clients
             conversations_cache[conversation_id] = [{
@@ -93,7 +89,7 @@ async def chat(request: MessageRequest):
             
             # Add user and assistant messages
             for msg in messages_db:
-                if msg["role"] != "system":  # Skip system messages as we've already added our system message
+                if msg["role"] != "system":  # Skip system messages
                     conversations_cache[conversation_id].append({
                         "role": msg["role"],
                         "content": msg["content"]
@@ -120,6 +116,7 @@ async def chat(request: MessageRequest):
         mongo_db.save_message(conversation_id, "user", message)
         
         # Get response based on selected model
+        print(f"Getting response from {model}...")
         if model in ['gpt-4o', 'gpt-4o-mini']:
             response_text = ask_openai(conversations_cache[conversation_id], model)
         elif model == 'gemini-pro':
@@ -146,8 +143,6 @@ async def chat(request: MessageRequest):
             "conversation_id": conversation_id
         }
         
-    except HTTPException as e:
-        raise e
     except Exception as e:
         import traceback
         error_details = traceback.format_exc()
@@ -231,30 +226,3 @@ async def update_system_prompt(chat_id: str, request: dict):
         raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/api/chat/upload-file")
-async def upload_file(
-    file: UploadFile = File(...),
-    conversation_id: str = Form(...)
-):
-    try:
-        # Create uploads directory if it doesn't exist
-        os.makedirs(f"uploads/{conversation_id}", exist_ok=True)
-        
-        # Save the file
-        file_path = f"uploads/{conversation_id}/{file.filename}"
-        with open(file_path, "wb") as f:
-            f.write(await file.read())
-        
-        return {
-            "success": True,
-            "file_path": file_path,
-            "filename": file.filename
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-# Run the app
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=5000)

@@ -12,13 +12,17 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: false, // Change to true if your API requires credentials
+  withCredentials: false,
+  timeout: 30000, // 30 second timeout
 });
 
 // Add request interceptor for debugging
 apiClient.interceptors.request.use(
   (config) => {
     console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`);
+    if (config.data) {
+      console.log('Request data:', JSON.stringify(config.data).substring(0, 200) + '...');
+    }
     return config;
   },
   (error) => {
@@ -31,18 +35,29 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => {
     console.log(`API Response: ${response.status} ${response.config.url}`);
+    console.log('Response data:', JSON.stringify(response.data).substring(0, 200) + '...');
     return response;
   },
   (error) => {
     console.error('API Response Error:', error);
     if (error.response) {
-      console.error('Error Data:', error.response.data);
       console.error('Error Status:', error.response.status);
+      console.error('Error Data:', error.response.data);
     } else if (error.request) {
-      console.error('No Response Received:', error.request);
+      console.error('No Response Received. Is the server running?');
     } else {
       console.error('Error Message:', error.message);
     }
-    return Promise.reject(error);
+    
+    // Return a meaningful error to the UI
+    if (error.code === 'ECONNABORTED') {
+      return Promise.reject(new Error('Request timed out. Please try again.'));
+    } else if (!error.response) {
+      return Promise.reject(new Error('Cannot reach the server. Please check your connection.'));
+    } else if (error.response.status === 401) {
+      return Promise.reject(new Error('Authentication failed. Please check your API keys.'));
+    } else {
+      return Promise.reject(error);
+    }
   }
 );

@@ -1,8 +1,6 @@
 
 import os
 import time
-
-from anthropic import Anthropic
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -18,15 +16,19 @@ def ask_claude(messages):
         if not CLAUDE_API_KEY:
             return "Claude API key not configured. Please set ANTHROPIC_API_KEY in .env file."
         
+        # Import here to avoid errors if package is not installed
+        from anthropic import Anthropic
+        
         client = Anthropic(api_key=CLAUDE_API_KEY)
         
         # Format messages for Claude API
         claude_messages = []
+        system_content = ""
+        
         for msg in messages:
             if msg["role"] == "system":
                 # Claude has a special format for system messages
                 system_content = msg["content"]
-                continue
             elif msg["role"] == "user":
                 claude_messages.append({"role": "user", "content": msg["content"]})
             elif msg["role"] == "assistant":
@@ -36,7 +38,7 @@ def ask_claude(messages):
         response = client.messages.create(
             model="claude-3-sonnet-20240229",
             max_tokens=1024,
-            system=system_content if 'system_content' in locals() else "",
+            system=system_content,
             messages=claude_messages
         )
         end_time = time.time()

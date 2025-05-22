@@ -7,13 +7,11 @@ This is a chat application using multiple AI models like Gemini, Claude, and Ope
 
 ### 1. Environment Variables
 
-#### Backend
-
-1. Copy the `.env.example` file to `.env` in the backend directory:
+1. Backend environment:
    ```
    cp backend/.env.example backend/.env
    ```
-2. Edit the `backend/.env` file and add your API keys:
+   Edit the `backend/.env` file and add your API keys:
    ```
    OPENAI_API_KEY=your_openai_api_key_here
    GEMINI_API_KEY=your_gemini_api_key_here
@@ -25,17 +23,14 @@ This is a chat application using multiple AI models like Gemini, Claude, and Ope
    DB_NAME=studymate_db
    ```
 
-#### Frontend
-
-1. Copy the `.env.example` file to `.env` in the root directory:
+2. Frontend environment:
    ```
    cp .env.example .env
    ```
-2. Edit the `.env` file to set the correct API URL for your backend:
+   Set the API URL for your backend:
    ```
    VITE_API_BASE_URL=http://localhost:5000/api
    ```
-   Note: If your frontend is running on port 8080, make sure the backend CORS settings allow it.
 
 ### 2. Database Setup
 
@@ -45,22 +40,12 @@ This application uses MongoDB with the database name `studymate_db`. Make sure M
 mongod --dbpath /path/to/data/directory
 ```
 
-The following collections are used:
-- `chat_boxes`: Stores chat metadata
-- `chat_messages`: Stores individual messages
-
 ### 3. Install Dependencies
 
-#### Backend (Flask)
+#### Backend (FastAPI)
 ```
 cd backend
 pip install -r requirements.txt
-```
-
-#### Backend (FastAPI - Alternative)
-```
-cd backend
-pip install -r requirements-fastapi.txt
 ```
 
 #### Frontend
@@ -70,16 +55,10 @@ npm install
 
 ### 4. Run the Application
 
-#### Backend (Flask)
+#### Backend
 ```
 cd backend
-python app.py
-```
-
-#### Backend (FastAPI - Alternative)
-```
-cd backend
-uvicorn fast_api_app:app --reload --port 5000
+uvicorn main:app --reload --host 0.0.0.0 --port 5000
 ```
 
 #### Frontend
@@ -87,22 +66,24 @@ uvicorn fast_api_app:app --reload --port 5000
 npm run dev
 ```
 
-## Features
+## API Endpoints
 
-- Chat with multiple AI models (Gemini, Claude, OpenAI)
-- System prompts are optional for customizing assistant behavior
-- Upload images and files
-- Save and manage multiple conversations
+The application provides the following API endpoints:
 
-## API Implementations
+- `POST /api/chat`: Send a chat message and get a response
+- `GET /api/chats`: Get all chats for the current user
+- `GET /api/chats/{chat_id}`: Get chat history for a specific conversation
+- `DELETE /api/chats/{chat_id}`: Delete a chat
+- `PATCH /api/chats/{chat_id}/system-prompt`: Update system prompt for a chat
+- `GET /api/health`: Check if the API server is running
+
+## Supported AI Models
 
 This application integrates with three AI providers:
 
-1. **Google Gemini**: Used for text and multimodal conversations
+1. **Google Gemini**: Used for text conversations
 2. **Anthropic Claude**: Used for detailed, longer-form conversations
 3. **OpenAI GPT**: Used for advanced language capabilities
-
-Each API has its own implementation in the `backend/services` directory.
 
 ## Troubleshooting
 
