@@ -12,9 +12,12 @@ export const sendChatMessage = async (request: ChatRequest): Promise<ChatRespons
       // We would need to implement a multipart/form-data upload here
     }
     
+    console.log('Sending request to backend:', request);
     const response = await apiClient.post<ChatResponse>('/chat', request);
+    console.log('Response from backend:', response.data);
     return response.data;
   } catch (error) {
+    console.error('Error in sendChatMessage:', error);
     if (axios.isAxiosError(error) && error.response?.data?.error) {
       throw new Error(error.response.data.error);
     }
