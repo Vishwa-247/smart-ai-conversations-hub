@@ -23,6 +23,8 @@ This is a chat application using multiple AI models like Gemini, Claude, and Ope
    DB_NAME=studymate_db
    ```
 
+   **IMPORTANT**: For the application to work properly, you must provide valid API keys for the models you want to use.
+
 2. Frontend environment:
    ```
    cp .env.example .env
@@ -66,6 +68,27 @@ uvicorn main:app --reload --host 0.0.0.0 --port 5000
 npm run dev
 ```
 
+## Troubleshooting
+
+If you encounter issues:
+
+1. **API Keys**: Make sure you've set up all required API keys in the `.env` file.
+   - For Gemini errors: Check that GEMINI_API_KEY is properly set in the backend/.env file
+   - For OpenAI errors: Check your OPENAI_API_KEY
+   - For Claude errors: Check your ANTHROPIC_API_KEY
+   - For Grok errors: Check your GROK_API_KEY
+
+2. **MongoDB errors**: 
+   - Ensure MongoDB is running at the correct URL (default: mongodb://localhost:27017/)
+   - Check that the database name is correctly set (default: studymate_db)
+
+3. **Connection issues**: 
+   - Verify the backend server is running at the expected URL
+   - Check CORS settings if you see CORS errors
+   - Make sure frontend is configured with the correct API URL
+
+4. **Console logs**: Check both browser console and backend terminal for error messages
+
 ## API Endpoints
 
 The application provides the following API endpoints:
@@ -76,21 +99,3 @@ The application provides the following API endpoints:
 - `DELETE /api/chats/{chat_id}`: Delete a chat
 - `PATCH /api/chats/{chat_id}/system-prompt`: Update system prompt for a chat
 - `GET /api/health`: Check if the API server is running
-
-## Supported AI Models
-
-This application integrates with three AI providers:
-
-1. **Google Gemini**: Used for text conversations
-2. **Anthropic Claude**: Used for detailed, longer-form conversations
-3. **OpenAI GPT**: Used for advanced language capabilities
-
-## Troubleshooting
-
-If you encounter issues:
-
-1. Check that your API keys are correctly set in the `.env` file
-2. Ensure the MongoDB server is running and accessible
-3. Verify the backend server is running and accessible at the expected URL
-4. Check browser console and backend logs for error messages
-5. Make sure CORS is properly configured if you see CORS errors

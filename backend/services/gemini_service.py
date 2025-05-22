@@ -18,6 +18,7 @@ def ask_gemini(messages):
     """Send message to Gemini and return response"""
     try:
         if not GEMINI_API_KEY:
+            print("Warning: GEMINI_API_KEY environment variable not set")
             return "Gemini API key not configured. Please set GEMINI_API_KEY in .env file."
             
         print("Starting Gemini request...")
@@ -44,6 +45,7 @@ def ask_gemini(messages):
                 formatted_content += f"{msg['role'].upper()}: {msg['content']}\n\n"
         
         print(f"Prompt length: {len(formatted_content)} characters")
+        print(f"Using API key: {GEMINI_API_KEY[:5]}...{GEMINI_API_KEY[-5:] if GEMINI_API_KEY else 'None'}")
         
         # Generate response with timeout
         print("Sending request to Gemini API...")

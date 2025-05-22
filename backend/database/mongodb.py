@@ -40,26 +40,53 @@ class MongoDB:
         result = self.chats.insert_one(chat_data)
         return str(result.inserted_id)
     
+    def is_valid_object_id(self, id_str):
+        """Check if a string is a valid ObjectId"""
+        try:
+            ObjectId(id_str)
+            return True
+        except Exception:
+            return False
+    
     def save_message(self, chat_id, role, content):
         """Save a message to the chat history"""
         try:
-            chat_id_obj = ObjectId(chat_id)
-            
-            message_data = {
-                "chat_id": chat_id_obj,
-                "role": role,
-                "content": content,
-                "timestamp": datetime.utcnow()
-            }
-            
-            self.messages.insert_one(message_data)
-            
-            # Update chat's last updated timestamp
-            self.chats.update_one(
-                {"_id": chat_id_obj}, 
-                {"$set": {"updated_at": datetime.utcnow()}}
-            )
-            return True
+            if not self.is_valid_object_id(chat_id):
+                # If not a valid ObjectId, use the string as-is
+                message_data = {
+                    "chat_id": chat_id,
+                    "role": role,
+                    "content": content,
+                    "timestamp": datetime.utcnow()
+                }
+                
+                self.messages.insert_one(message_data)
+                
+                # Update chat's last updated timestamp - use string ID
+                self.chats.update_one(
+                    {"_id": chat_id}, 
+                    {"$set": {"updated_at": datetime.utcnow()}}
+                )
+                return True
+            else:
+                # Valid ObjectId, use it
+                chat_id_obj = ObjectId(chat_id)
+                
+                message_data = {
+                    "chat_id": chat_id_obj,
+                    "role": role,
+                    "content": content,
+                    "timestamp": datetime.utcnow()
+                }
+                
+                self.messages.insert_one(message_data)
+                
+                # Update chat's last updated timestamp
+                self.chats.update_one(
+                    {"_id": chat_id_obj}, 
+                    {"$set": {"updated_at": datetime.utcnow()}}
+                )
+                return True
         except Exception as e:
             print(f"Error saving message: {e}")
             return False
@@ -67,16 +94,23 @@ class MongoDB:
     def get_chat_history(self, chat_id, limit=50):
         """Get messages for a specific chat with a limit"""
         try:
-            chat_id_obj = ObjectId(chat_id)
-            messages = list(self.messages.find(
-                {"chat_id": chat_id_obj}
-            ).sort("timestamp", 1).limit(limit))
+            if not self.is_valid_object_id(chat_id):
+                # Use string ID
+                messages = list(self.messages.find(
+                    {"chat_id": chat_id}
+                ).sort("timestamp", 1).limit(limit))
+            else:
+                # Use ObjectId
+                chat_id_obj = ObjectId(chat_id)
+                messages = list(self.messages.find(
+                    {"chat_id": chat_id_obj}
+                ).sort("timestamp", 1).limit(limit))
             
             # Convert ObjectId to string for serialization
             for msg in messages:
                 if "_id" in msg:
                     msg["_id"] = str(msg["_id"])
-                if "chat_id" in msg:
+                if "chat_id" in msg and isinstance(msg["chat_id"], ObjectId):
                     msg["chat_id"] = str(msg["chat_id"])
                     
             return messages
@@ -87,12 +121,17 @@ class MongoDB:
     def get_chat_by_id(self, chat_id):
         """Get a chat by its ID"""
         try:
-            chat_id_obj = ObjectId(chat_id)
-            chat = self.chats.find_one({"_id": chat_id_obj})
+            if not self.is_valid_object_id(chat_id):
+                # Use string ID
+                chat = self.chats.find_one({"_id": chat_id})
+            else:
+                # Use ObjectId
+                chat_id_obj = ObjectId(chat_id)
+                chat = self.chats.find_one({"_id": chat_id_obj})
             
             if chat:
                 # Convert ObjectId to string for serialization
-                if "_id" in chat:
+                if "_id" in chat and isinstance(chat["_id"], ObjectId):
                     chat["_id"] = str(chat["_id"])
                     
             return chat
@@ -109,7 +148,7 @@ class MongoDB:
             
             # Convert ObjectId to string for serialization
             for chat in chats:
-                if "_id" in chat:
+                if "_id" in chat and isinstance(chat["_id"], ObjectId):
                     chat["_id"] = str(chat["_id"])
                     
             return chats
@@ -120,13 +159,22 @@ class MongoDB:
     def delete_chat(self, chat_id):
         """Delete a chat and all its messages"""
         try:
-            chat_id_obj = ObjectId(chat_id)
-            
-            # Delete all messages in the chat
-            self.messages.delete_many({"chat_id": chat_id_obj})
-            
-            # Delete the chat itself
-            self.chats.delete_one({"_id": chat_id_obj})
+            if not self.is_valid_object_id(chat_id):
+                # Use string ID
+                # Delete all messages in the chat
+                self.messages.delete_many({"chat_id": chat_id})
+                
+                # Delete the chat itself
+                self.chats.delete_one({"_id": chat_id})
+            else:
+                # Use ObjectId
+                chat_id_obj = ObjectId(chat_id)
+                
+                # Delete all messages in the chat
+                self.messages.delete_many({"chat_id": chat_id_obj})
+                
+                # Delete the chat itself
+                self.chats.delete_one({"_id": chat_id_obj})
             
             return True
         except Exception as e:
@@ -136,13 +184,22 @@ class MongoDB:
     def update_system_prompt(self, chat_id, system_prompt):
         """Update the system prompt for a chat"""
         try:
-            chat_id_obj = ObjectId(chat_id)
-            
-            # Update system prompt in the chat document
-            result = self.chats.update_one(
-                {"_id": chat_id_obj},
-                {"$set": {"system_prompt": system_prompt, "updated_at": datetime.utcnow()}}
-            )
+            if not self.is_valid_object_id(chat_id):
+                # Use string ID
+                # Update system prompt in the chat document
+                result = self.chats.update_one(
+                    {"_id": chat_id},
+                    {"$set": {"system_prompt": system_prompt, "updated_at": datetime.utcnow()}}
+                )
+            else:
+                # Use ObjectId
+                chat_id_obj = ObjectId(chat_id)
+                
+                # Update system prompt in the chat document
+                result = self.chats.update_one(
+                    {"_id": chat_id_obj},
+                    {"$set": {"system_prompt": system_prompt, "updated_at": datetime.utcnow()}}
+                )
             
             return result.modified_count > 0
         except Exception as e:
