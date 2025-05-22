@@ -1,4 +1,5 @@
 
+import axios from 'axios';
 import { apiClient } from './apiClient';
 import { ChatRequest, ChatResponse, Chat, ChatsResponse, ChatHistoryResponse, ChatMessage, ModelType } from './types';
 

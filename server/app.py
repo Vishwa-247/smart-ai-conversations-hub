@@ -1,4 +1,3 @@
-
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
@@ -15,7 +14,8 @@ from llm_clients.claude_client import ask_claude
 from db.mongo_client import MongoDB
 
 app = Flask(__name__)
-CORS(app, origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000"], supports_credentials=True)
+CORS(app, origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000",
+                  "http://localhost:8080", "http://127.0.0.1:8080"], supports_credentials=True)
 
 # Initialize MongoDB client
 mongo_db = MongoDB()
