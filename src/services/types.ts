@@ -1,4 +1,3 @@
-
 export type ModelType = 'gemini-pro' | 'claude-3-sonnet' | 'grok-1';
 
 export interface ChatMessage {
@@ -24,11 +23,24 @@ export interface ChatRequest {
 }
 
 export interface ChatResponse {
+  role: 'assistant';
   response: string;
   conversation_id: string;
-  role?: 'assistant';
-  content?: string;
-  error?: string;
+  model_used?: string;
+  citations?: Array<{
+    source: string;
+    filename: string;
+    chunk_index: number;
+    similarity: number;
+  }>;
+  reasoning?: string;
+}
+
+export interface DocumentUploadResponse {
+  success: boolean;
+  message: string;
+  filename: string;
+  chunk_count?: number;
 }
 
 export interface Chat {
