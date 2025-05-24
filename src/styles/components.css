@@ -14,100 +14,216 @@
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background-color: hsl(var(--muted-foreground) / 0.3);
   border-radius: 100px;
+  transition: background-color 0.3s ease;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background-color: hsl(var(--muted-foreground) / 0.5);
 }
 
-/* ChatGPT-like UI elements */
+/* Glassmorphic effects */
+.glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.glass-dark {
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Enhanced ChatGPT-like UI elements */
 .rounded-chatgpt {
   @apply rounded-xl;
 }
 
 .chatgpt-bubble {
-  @apply rounded-xl border border-border/30 bg-background p-4;
+  @apply rounded-xl border border-border/30 bg-card/80 backdrop-blur-sm p-4 shadow-lg;
 }
 
 .chatgpt-button {
-  @apply rounded-xl transition-all duration-300 hover:bg-foreground/5;
+  @apply rounded-xl transition-all duration-300 hover:bg-foreground/5 hover:scale-[1.02] active:scale-[0.98];
 }
 
 .chatgpt-input {
-  @apply rounded-xl border border-border/40;
+  @apply rounded-xl border border-border/40 bg-background/80 backdrop-blur-sm;
 }
 
 .chatgpt-dropdown {
-  @apply bg-popover text-popover-foreground border border-border shadow-lg rounded-xl overflow-hidden;
+  @apply bg-popover/95 text-popover-foreground border border-border shadow-2xl rounded-xl overflow-hidden backdrop-blur-lg;
 }
 
-/* ChatGPT specific styles */
-.chatgpt-theme .dropdown-menu {
-  @apply rounded-lg overflow-hidden shadow-lg border border-border/30;
+/* Floating animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(2deg); }
 }
 
-.chatgpt-theme button {
-  @apply rounded-lg transition-all duration-300;
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px hsl(var(--primary) / 0.3); }
+  50% { box-shadow: 0 0 40px hsl(var(--primary) / 0.6); }
 }
 
-.chatgpt-theme input,
-.chatgpt-theme textarea {
-  @apply rounded-lg border-border/30;
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
 }
 
-/* Common hover effect for all themes */
-.hover-transparent {
-  @apply hover:bg-foreground/5 transition-all duration-300;
+.float {
+  animation: float 3s ease-in-out infinite;
 }
 
-/* Ensure all buttons have consistent rounded corners */
+.pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.gradient-shift {
+  background-size: 200% 200%;
+  animation: gradient-shift 3s ease infinite;
+}
+
+/* Interactive hover effects */
+.hover-lift {
+  @apply transition-all duration-300 hover:shadow-xl hover:-translate-y-1;
+}
+
+.hover-glow {
+  @apply transition-all duration-300 hover:shadow-lg hover:shadow-primary/25;
+}
+
+.hover-scale {
+  @apply transition-transform duration-200 hover:scale-105 active:scale-95;
+}
+
+/* Message animations */
+.message-enter {
+  animation: messageEnter 0.5s ease-out forwards;
+}
+
+@keyframes messageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Button enhancements */
 button, 
 .button,
 [role="button"] {
-  @apply rounded-lg overflow-hidden;
+  @apply rounded-xl overflow-hidden transition-all duration-300;
 }
 
-/* Dropdown menus consistency */
+button:hover,
+.button:hover,
+[role="button"]:hover {
+  @apply shadow-lg transform scale-[1.02];
+}
+
+button:active,
+.button:active,
+[role="button"]:active {
+  @apply transform scale-[0.98];
+}
+
+/* Card enhancements */
+.card {
+  @apply bg-card/80 backdrop-blur-sm border-border/50 shadow-xl hover:shadow-2xl transition-all duration-300;
+}
+
+.card:hover {
+  @apply transform scale-[1.01] shadow-2xl;
+}
+
+/* Dropdown animations */
 [role="menu"],
 [role="dialog"] {
-  @apply rounded-xl overflow-hidden;
+  @apply rounded-xl overflow-hidden backdrop-blur-lg;
 }
 
-/* Light mode model selector background */
-.light .model-selector-button {
-  @apply bg-white shadow-sm;
+/* Model selector enhancements */
+.model-card {
+  @apply relative overflow-hidden rounded-xl p-4 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl;
 }
 
-/* Light mode dropdown item highlight */
-.light .dropdown-item-highlight {
-  @apply bg-slate-50 hover:bg-slate-100;
+.model-card::before {
+  content: '';
+  @apply absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 -translate-x-full transition-transform duration-700;
 }
 
-/* ChatGPT-like message styling */
-.message-container {
-  @apply border-b border-border/10 last:border-b-0;
+.model-card:hover::before {
+  @apply translate-x-full;
 }
 
-.ai-message-bg {
-  @apply bg-muted/10;
+/* Text animations */
+.typewriter {
+  overflow: hidden;
+  border-right: 2px solid hsl(var(--primary));
+  white-space: nowrap;
+  animation: typing 3.5s steps(40, end), blink-caret 0.75s step-end infinite;
 }
 
-.user-message-bg {
-  @apply bg-transparent;
+@keyframes typing {
+  from { width: 0; }
+  to { width: 100%; }
 }
 
-/* Fix icon visibility in light mode */
-.light .text-primary-foreground,
-.light .text-secondary-foreground {
-  @apply text-white;
+@keyframes blink-caret {
+  from, to { border-color: transparent; }
+  50% { border-color: hsl(var(--primary)); }
 }
 
-/* Add contrast to icons in light mode */
-.light svg {
-  @apply text-gray-700;
+/* Status indicators */
+.status-online {
+  @apply bg-green-500 shadow-green-500/50;
+  animation: pulse-glow 2s ease-in-out infinite;
 }
 
-/* Ensure proper icon visibility in avatar fallbacks */
-.light .Avatar-fallback svg {
-  @apply text-white;
+.status-offline {
+  @apply bg-red-500 shadow-red-500/50;
+}
+
+.status-local {
+  @apply bg-blue-500 shadow-blue-500/50;
+}
+
+/* Theme transitions */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Light mode specific enhancements */
+.light .glass {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Dark mode specific enhancements */
+.dark .glass {
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .chatgpt-bubble {
+    @apply p-3;
+  }
+  
+  .model-card {
+    @apply p-3;
+  }
+}
+
+/* Focus styles */
+*:focus-visible {
+  @apply ring-2 ring-primary ring-offset-2 ring-offset-background outline-none;
 }
