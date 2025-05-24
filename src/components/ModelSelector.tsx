@@ -1,5 +1,5 @@
 
-import { Check, ChevronDown, Zap, Brain, Cpu, Sparkles } from "lucide-react";
+import { Check, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -9,192 +9,109 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useState, useEffect, useRef } from "react";
 import { ModelType, useChat } from "@/contexts/ChatContext";
-import { motion, AnimatePresence } from "framer-motion";
+import gsap from "gsap";
 
 interface ModelOption {
   value: ModelType;
   label: string;
   description: string;
   icon: React.ReactNode;
-  status: 'online' | 'offline' | 'local';
-  speed: 'fast' | 'medium' | 'slow';
-  capability: string;
-  gradient: string;
 }
 
 const models: ModelOption[] = [
   {
     value: "gemini-pro",
-    label: "Gemini Pro",
-    description: "Google's most advanced free AI",
-    icon: <Sparkles className="h-5 w-5" />,
-    status: 'online',
-    speed: 'fast',
-    capability: 'General Purpose',
-    gradient: 'from-blue-500 to-purple-600'
+    label: "Gemini",
+    description: "Google's advanced AI model",
+    icon: <svg viewBox="0 0 24 24" className="h-5 w-5 text-blue-500" fill="currentColor">
+      <path d="M11.9996 1.872L1.872 11.9996L11.9996 22.1272L22.1272 11.9996L11.9996 1.872ZM11.9996 4.96338L19.036 11.9996L11.9996 19.036L4.96338 11.9996L11.9996 4.96338Z" />
+      <path d="M11.9996 8.05618L8.05618 11.9996L11.9996 15.9432L15.9432 11.9996L11.9996 8.05618Z" />
+    </svg>
+  },
+  {
+    value: "claude-3-sonnet",
+    label: "Claude",
+    description: "Known for long-form content",
+    icon: <svg viewBox="0 0 24 24" className="h-5 w-5 text-purple-500" fill="currentColor">
+      <path d="M17.0024 0C15.7001 2.28271e-05 14.4542 0.503247 13.5168 1.41462L2.06557 12.5072C0.725636 13.8071 0 15.5948 0 17.4611C0 19.3273 0.725636 21.115 2.06557 22.4149C3.40551 23.7148 5.24936 24.4225 7.17409 24.4225C9.09882 24.4225 10.9427 23.7148 12.2826 22.4149L23.7338 11.3223C24.0885 10.9776 24.0885 10.4257 23.7338 10.081C23.3792 9.73627 22.8113 9.73627 22.4566 10.081L10.9994 21.1796C10.0651 22.0879 8.82588 22.5905 7.52709 22.5911C6.22831 22.5918 4.98832 22.0904 4.05276 21.183C3.11721 20.2757 2.60023 19.0689 2.60099 17.8042C2.60174 16.5396 3.12016 15.3333 4.05661 14.4272L15.5049 3.33865C16.111 2.75046 16.9273 2.41928 17.7767 2.41928C18.6262 2.41928 19.4425 2.75046 20.0486 3.33865C20.6547 3.92685 20.9961 4.71916 20.9961 5.54328C20.9961 6.36741 20.6547 7.15972 20.0486 7.74791L8.60339 18.864C8.29258 19.1645 7.88284 19.3316 7.45551 19.3316C7.02819 19.3316 6.61845 19.1645 6.30764 18.864C5.99683 18.5636 5.82256 18.1674 5.82256 17.7543C5.82256 17.3413 5.99683 16.9451 6.30764 16.6446L16.1127 7.1599C16.4674 6.81516 16.4674 6.26326 16.1127 5.91853C15.758 5.57379 15.1902 5.57379 14.8355 5.91853L5.03046 15.4032C4.42435 15.9914 4.0829 16.7837 4.0829 17.6078C4.0829 18.432 4.42435 19.2243 5.03046 19.8125C5.63657 20.4007 6.45286 20.7319 7.30226 20.7319C8.15166 20.7319 8.96795 20.4007 9.57406 19.8125L21.0223 8.70037C21.9566 7.79208 22.4748 6.56366 22.4748 5.28418C22.4748 4.00469 21.9566 2.77627 21.0223 1.86798C20.0879 0.959695 18.8289 0.459695 17.5114 0.459695L17.0024 0Z" />
+    </svg>
   },
   {
     value: "grok-1",
     label: "Grok",
-    description: "X's conversational AI with humor",
-    icon: <Zap className="h-5 w-5" />,
-    status: 'online',
-    speed: 'medium',
-    capability: 'Creative & Witty',
-    gradient: 'from-red-500 to-orange-500'
-  },
-  {
-    value: "mistral-7b",
-    label: "Mistral 7B",
-    description: "Open-source powerhouse",
-    icon: <Brain className="h-5 w-5" />,
-    status: 'online',
-    speed: 'fast',
-    capability: 'Code & Analysis',
-    gradient: 'from-green-500 to-emerald-600'
-  },
-  {
-    value: "phi-3-mini",
-    label: "Phi-3 Mini",
-    description: "Microsoft's local model",
-    icon: <Cpu className="h-5 w-5" />,
-    status: 'local',
-    speed: 'medium',
-    capability: 'Local & Private',
-    gradient: 'from-purple-500 to-pink-600'
+    description: "X's conversational AI assistant",
+    icon: <svg viewBox="0 0 24 24" className="h-5 w-5 text-red-500" fill="currentColor">
+      <path d="M14.5,8.5L10.5,7L9,11L13,12.5L14.5,8.5M21.3,2.7L18.7,5.3L23,9.6L21.3,11.3L17,7L12.9,11.1L11,17.9L14,20.8L12.9,22L6.4,15.5L8.6,13.3L6.4,11.1L9.9,7.6L7,4.7L8.7,3L13,7.3L16.3,4L21.3,2.7Z" />
+    </svg>
   },
 ];
 
 export default function ModelSelector() {
   const { currentModel, setCurrentModel, createChat } = useChat();
   const [open, setOpen] = useState(false);
-  const [hoveredModel, setHoveredModel] = useState<ModelType | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (containerRef.current) {
+      gsap.fromTo(
+        containerRef.current,
+        { opacity: 0, y: -10 },
+        { opacity: 1, y: 0, duration: 0.5, ease: "back.out" }
+      );
+    }
+  }, []);
 
   const handleSelectModel = (model: ModelType) => {
     if (model !== currentModel) {
       setCurrentModel(model);
-      createChat(model);
+      createChat(model); // Start a new chat with the selected model
     }
     setOpen(false);
   };
 
+  // Get the current model details
   const selectedModel = models.find(m => m.value === currentModel) || models[0];
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'online': return 'bg-green-500';
-      case 'offline': return 'bg-red-500';
-      case 'local': return 'bg-blue-500';
-      default: return 'bg-gray-500';
-    }
-  };
-
-  const getSpeedColor = (speed: string) => {
-    switch (speed) {
-      case 'fast': return 'text-green-400';
-      case 'medium': return 'text-yellow-400';
-      case 'slow': return 'text-red-400';
-      default: return 'text-gray-400';
-    }
-  };
-
   return (
-    <motion.div 
-      className="transition-all duration-300"
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-    >
+    <div ref={containerRef} className="transition-all duration-300">
       <DropdownMenu open={open} onOpenChange={setOpen}>
         <DropdownMenuTrigger asChild>
           <Button 
             variant="outline" 
-            className={`flex justify-between items-center w-full gap-2 h-auto p-4 rounded-xl hover:bg-foreground/5 transition-all duration-300 border border-border/40 bg-gradient-to-r ${selectedModel.gradient} bg-opacity-10 backdrop-blur-sm`}
+            className="flex justify-between items-center w-full gap-2 h-10 rounded-xl hover:bg-foreground/5 transition-all duration-300 border border-border/40 model-selector-button"
           >
-            <div className="flex items-center gap-3">
-              <motion.div 
-                className="flex-shrink-0 p-2 rounded-lg bg-white/20 backdrop-blur-sm"
-                whileHover={{ rotate: 360 }}
-                transition={{ duration: 0.5 }}
-              >
-                {selectedModel.icon}
-              </motion.div>
-              <div className="text-left">
-                <div className="font-semibold text-foreground">{selectedModel.label}</div>
-                <div className="text-xs text-muted-foreground flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${getStatusColor(selectedModel.status)}`}></div>
-                  <span className={getSpeedColor(selectedModel.speed)}>{selectedModel.speed}</span>
-                  <span>•</span>
-                  <span>{selectedModel.capability}</span>
-                </div>
-              </div>
+            <div className="flex items-center gap-2">
+              <span className="flex-shrink-0">{selectedModel.icon}</span>
+              <span className="truncate">{selectedModel.label}</span>
             </div>
             <ChevronDown className="h-4 w-4 opacity-50" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent
-          className="w-[320px] p-2 rounded-xl overflow-hidden shadow-2xl border border-border/40 bg-popover/95 backdrop-blur-lg"
+          className="w-[250px] animate-fade-in rounded-xl overflow-hidden shadow-lg border border-border/40 bg-popover"
           align="end"
           sideOffset={8}
         >
-          <AnimatePresence>
-            {models.map((model, index) => (
-              <motion.div
-                key={model.value}
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <DropdownMenuItem
-                  className="flex items-center justify-between p-3 cursor-pointer rounded-xl transition-all duration-300 hover:bg-foreground/5 group"
-                  onClick={() => handleSelectModel(model.value)}
-                  onMouseEnter={() => setHoveredModel(model.value)}
-                  onMouseLeave={() => setHoveredModel(null)}
-                >
-                  <div className="flex items-center gap-3">
-                    <motion.div 
-                      className={`flex-shrink-0 p-2 rounded-lg bg-gradient-to-r ${model.gradient} text-white`}
-                      whileHover={{ scale: 1.1, rotate: 5 }}
-                      transition={{ type: "spring", stiffness: 400, damping: 10 }}
-                    >
-                      {model.icon}
-                    </motion.div>
-                    <div>
-                      <div className="font-medium flex items-center gap-2">
-                        {model.label}
-                        {currentModel === model.value && (
-                          <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            className="text-green-500"
-                          >
-                            <Check className="h-4 w-4" />
-                          </motion.div>
-                        )}
-                      </div>
-                      <div className="text-xs text-muted-foreground">{model.description}</div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <div className={`w-2 h-2 rounded-full ${getStatusColor(model.status)}`}></div>
-                        <span className={`text-xs ${getSpeedColor(model.speed)}`}>{model.speed}</span>
-                        <span className="text-xs text-muted-foreground">•</span>
-                        <span className="text-xs text-muted-foreground">{model.capability}</span>
-                      </div>
-                    </div>
-                  </div>
-                  {hoveredModel === model.value && (
-                    <motion.div
-                      initial={{ scale: 0, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      className="text-xs bg-primary/20 px-2 py-1 rounded-full"
-                    >
-                      Select
-                    </motion.div>
-                  )}
-                </DropdownMenuItem>
-              </motion.div>
-            ))}
-          </AnimatePresence>
+          {models.map((model) => (
+            <DropdownMenuItem
+              key={model.value}
+              className="flex items-center justify-between py-2 cursor-pointer rounded-lg transition-all duration-300 hover:bg-foreground/5 dropdown-item-highlight"
+              onClick={() => handleSelectModel(model.value)}
+            >
+              <div className="flex items-center gap-2">
+                <span className="flex-shrink-0">{model.icon}</span>
+                <div>
+                  <p className="font-medium">{model.label}</p>
+                  <p className="text-xs text-muted-foreground">{model.description}</p>
+                </div>
+              </div>
+              {currentModel === model.value && (
+                <Check className="h-4 w-4" />
+              )}
+            </DropdownMenuItem>
+          ))}
         </DropdownMenuContent>
       </DropdownMenu>
-    </motion.div>
+    </div>
   );
 }

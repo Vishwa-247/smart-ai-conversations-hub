@@ -16,6 +16,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const storedTheme = localStorage.getItem('theme') as ThemeType | null;
     
+    // Check for stored theme or system preference
     if (storedTheme && ['dark', 'light', 'forest'].includes(storedTheme)) {
       setTheme(storedTheme);
     } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
@@ -24,16 +25,36 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // Update the data theme attribute and store in localStorage
     const root = window.document.documentElement;
     
-    // Remove all theme classes
-    root.classList.remove('light', 'dark', 'forest');
-    
-    // Add the current theme
+    root.classList.remove('light', 'dark', 'forest', 'cyberpunk', 'ocean');
     root.classList.add(theme);
-    
-    // Store in localStorage
     localStorage.setItem('theme', theme);
+    
+    // Ensure text visibility based on theme with high contrast
+    if (theme === 'light') {
+      root.style.setProperty('--foreground', '222.2 84% 4.9%');
+      root.style.setProperty('--background', '0 0% 100%');
+      root.style.setProperty('--card', '0 0% 100%');
+      root.style.setProperty('--popover', '0 0% 100%');
+      root.style.setProperty('--sidebar-accent', '0 0% 96%');
+      root.style.setProperty('--sidebar-background', '0 0% 98%');
+    } else if (theme === 'dark') {
+      // True black for dark mode
+      root.style.setProperty('--foreground', '210 40% 98%');
+      root.style.setProperty('--background', '0 0% 7%');
+      root.style.setProperty('--sidebar-background', '0 0% 5%');
+      root.style.setProperty('--card', '0 0% 9%');
+      root.style.setProperty('--popover', '0 0% 9%');
+    } else if (theme === 'forest') {
+      // Improve forest theme for better text contrast
+      root.style.setProperty('--foreground', '0 0% 95%');
+      root.style.setProperty('--background', '150 30% 10%');
+      root.style.setProperty('--sidebar-background', '150 30% 8%');
+      root.style.setProperty('--card', '150 30% 12%');
+      root.style.setProperty('--popover', '150 30% 12%');
+    }
   }, [theme]);
 
   return (

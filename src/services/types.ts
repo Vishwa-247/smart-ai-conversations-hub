@@ -1,5 +1,4 @@
-
-export type ModelType = 'gemini-pro' | 'grok-1' | 'mistral-7b' | 'phi-3-mini';
+export type ModelType = 'gemini-pro' | 'claude-3-sonnet' | 'grok-1';
 
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
