@@ -59,7 +59,6 @@ export default function EmptyChat({
                     <SystemPromptInput 
                       value={systemPrompt} 
                       onChange={setSystemPrompt}
-                      placeholder="Set custom instructions for the AI assistant (optional)"
                     />
                   </CardContent>
                 </Card>
