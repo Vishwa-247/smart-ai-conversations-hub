@@ -1,7 +1,12 @@
 
 import time
 import psutil
-import GPUtil
+try:
+    import pynvml
+    NVIDIA_ML_AVAILABLE = True
+except ImportError:
+    NVIDIA_ML_AVAILABLE = False
+
 from typing import Dict, List, Optional
 from services.ollama_service import OllamaService
 
@@ -9,6 +14,13 @@ class ModelRouter:
     def __init__(self):
         self.ollama_service = OllamaService()
         self.performance_history = []
+        
+        # Initialize NVIDIA ML if available
+        if NVIDIA_ML_AVAILABLE:
+            try:
+                pynvml.nvmlInit()
+            except:
+                pass
         
     def analyze_query_complexity(self, query: str) -> Dict[str, any]:
         """Analyze query to determine complexity"""
@@ -53,18 +65,23 @@ class ModelRouter:
             memory = psutil.virtual_memory()
             
             gpu_info = {"available": False, "memory_used": 0, "memory_total": 0}
-            try:
-                gpus = GPUtil.getGPUs()
-                if gpus:
-                    gpu = gpus[0]  # Use first GPU
-                    gpu_info = {
-                        "available": True,
-                        "memory_used": gpu.memoryUsed,
-                        "memory_total": gpu.memoryTotal,
-                        "utilization": gpu.load * 100
-                    }
-            except:
-                pass
+            
+            if NVIDIA_ML_AVAILABLE:
+                try:
+                    device_count = pynvml.nvmlDeviceGetCount()
+                    if device_count > 0:
+                        handle = pynvml.nvmlDeviceGetHandleByIndex(0)  # Use first GPU
+                        memory_info = pynvml.nvmlDeviceGetMemoryInfo(handle)
+                        utilization = pynvml.nvmlDeviceGetUtilizationRates(handle)
+                        
+                        gpu_info = {
+                            "available": True,
+                            "memory_used": memory_info.used // (1024**2),  # Convert to MB
+                            "memory_total": memory_info.total // (1024**2),  # Convert to MB
+                            "utilization": utilization.gpu
+                        }
+                except Exception as e:
+                    print(f"Error getting GPU info: {e}")
             
             return {
                 "cpu_percent": cpu_percent,
