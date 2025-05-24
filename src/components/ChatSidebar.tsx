@@ -1,7 +1,7 @@
 
 import { useSidebar } from "@/contexts/SidebarContext";
 import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Home, FileText, Settings } from "lucide-react";
 import { useChat } from "@/contexts/ChatContext";
 import ModelSelector from "./ModelSelector";
 import ChatSidebarItem from "./ChatSidebarItem";
@@ -12,7 +12,7 @@ import gsap from "gsap";
 
 export default function ChatSidebar() {
   const { isOpen } = useSidebar();
-  const { chats, currentChatId, createChat, selectChat, deleteChat, currentModel } = useChat();
+  const { chats, currentChatId, createChat, selectChat, deleteChat, currentModel, setCurrentModel } = useChat();
   const sidebarRef = useSidebarAnimation(isOpen);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -37,6 +37,14 @@ export default function ChatSidebar() {
     createChat(currentModel);
   };
 
+  const handleGoHome = () => {
+    // Navigate to home by clearing current chat
+    if (currentChatId) {
+      // This will trigger the EmptyChat view
+      window.location.reload();
+    }
+  };
+
   if (!isOpen) {
     return null;
   }
@@ -44,48 +52,75 @@ export default function ChatSidebar() {
   return (
     <div
       ref={sidebarRef}
-      className="w-64 border-r h-screen flex flex-col bg-sidebar text-sidebar-foreground rounded-r-xl overflow-hidden border-sidebar-border/30"
+      className="w-64 border-r h-screen flex flex-col bg-sidebar/80 backdrop-blur-lg text-sidebar-foreground rounded-r-xl overflow-hidden border-sidebar-border/20 shadow-xl"
     >
-      <div className="p-3">
-        <Button 
-          onClick={handleCreateChat} 
-          className="w-full flex items-center justify-center gap-2 animate-fade-in rounded-xl py-3 border border-sidebar-border/30 bg-sidebar-accent/10 hover:bg-foreground/5 transition-all duration-300"
-          variant="outline"
-        >
-          <PlusCircle className="h-4 w-4" />
-          New Chat
-        </Button>
-      </div>
-      
-      <div className="p-2 mt-1">
-        <h2 className="text-sm font-medium px-3 py-1">Models</h2>
-        <ModelSelector />
-      </div>
-      
-      <div className="flex-1 overflow-y-auto custom-scrollbar">
-        <div className="px-2 py-1" ref={listRef}>
-          <h2 className="text-sm font-medium pl-3 mb-1">Chat History</h2>
-          {chats.length === 0 && (
-            <div className="text-sm text-sidebar-foreground/70 py-2 text-center">
-              No conversations yet
-            </div>
-          )}
+      {/* Header Section */}
+      <div className="p-4 border-b border-sidebar-border/20">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center">
+            <Settings className="w-4 h-4 text-white" />
+          </div>
+          <h1 className="font-semibold text-lg">AI Assistant</h1>
+        </div>
+        
+        {/* Navigation Buttons */}
+        <div className="space-y-2">
+          <Button 
+            onClick={handleGoHome}
+            className="w-full flex items-center justify-start gap-3 text-left hover:bg-sidebar-accent/20 transition-all duration-300 bg-transparent border-sidebar-border/30"
+            variant="outline"
+          >
+            <Home className="h-4 w-4" />
+            Home
+          </Button>
           
-          {chats.map((chat) => (
-            <ChatSidebarItem
-              key={chat.id}
-              chat={chat}
-              isSelected={chat.id === currentChatId}
-              onClick={() => selectChat(chat.id)}
-              onDelete={() => deleteChat(chat.id)}
-            />
-          ))}
+          <Button 
+            onClick={handleCreateChat} 
+            className="w-full flex items-center justify-start gap-3 text-left hover:bg-sidebar-accent/20 transition-all duration-300 bg-transparent border-sidebar-border/30"
+            variant="outline"
+          >
+            <PlusCircle className="h-4 w-4" />
+            New Chat
+          </Button>
         </div>
       </div>
       
-      <div className="p-3 border-t flex items-center justify-between bg-sidebar-accent/5 border-sidebar-border/30 rounded-b-xl">
-        <div className="text-xs font-medium text-sidebar-foreground/60">© 2025 AI Chat Assistant</div>
-        <ThemeSelector />
+      {/* Model Selector */}
+      <div className="p-4 border-b border-sidebar-border/20">
+        <h2 className="text-sm font-medium mb-3 text-sidebar-foreground/80">AI Model</h2>
+        <ModelSelector />
+      </div>
+      
+      {/* Chat History */}
+      <div className="flex-1 overflow-y-auto custom-scrollbar">
+        <div className="p-4" ref={listRef}>
+          <h2 className="text-sm font-medium mb-3 text-sidebar-foreground/80">Recent Chats</h2>
+          {chats.length === 0 ? (
+            <div className="text-sm text-sidebar-foreground/50 py-4 text-center">
+              No conversations yet
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {chats.map((chat) => (
+                <ChatSidebarItem
+                  key={chat.id}
+                  chat={chat}
+                  isSelected={chat.id === currentChatId}
+                  onClick={() => selectChat(chat.id)}
+                  onDelete={() => deleteChat(chat.id)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+      
+      {/* Footer */}
+      <div className="p-4 border-t border-sidebar-border/20 bg-sidebar-accent/5">
+        <div className="flex items-center justify-between">
+          <div className="text-xs text-sidebar-foreground/60">© 2025 AI Assistant</div>
+          <ThemeSelector />
+        </div>
       </div>
     </div>
   );
