@@ -8,7 +8,8 @@ import { apiService } from "./services/api";
 // Make API service available globally for compatibility
 (window as any).apiService = apiService;
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
+const root = ReactDOM.createRoot(document.getElementById("root")!);
+root.render(
   <React.StrictMode>
     <App />
   </React.StrictMode>
