@@ -1,6 +1,6 @@
-
 import React, { createContext, useState, useEffect } from 'react';
 import { apiService } from '@/services/api';
+import { backendService } from '@/services/backendService';
 import { Chat, ChatContextType, Message, ModelType } from '@/types/chat';
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -12,11 +12,24 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
 
-  // Load existing chats on app startup
+  // Enhanced startup sequence
   useEffect(() => {
-    const loadChats = async () => {
+    const initializeApp = async () => {
       try {
-        console.log('Loading existing chats from backend...');
+        console.log('Initializing application...');
+        
+        // Check backend health
+        const backendHealthy = await backendService.checkHealth();
+        if (!backendHealthy) {
+          console.warn('Backend not available, initializing local database...');
+          await backendService.initializeLocalDB();
+        }
+
+        // Validate model connections
+        const modelStatus = await backendService.validateModels();
+        console.log('Model status:', modelStatus);
+
+        // Load existing chats
         const existingChats = await apiService.getChats();
         
         // Convert backend chat format to frontend format
@@ -31,7 +44,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         }));
         
         setChats(formattedChats);
-        console.log(`Loaded ${formattedChats.length} chats from backend`);
+        console.log(`Loaded ${formattedChats.length} chats from database`);
         
         // Auto-select the most recent chat if available
         if (formattedChats.length > 0) {
@@ -43,13 +56,16 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           await loadChatMessages(mostRecentChat.id);
         }
       } catch (error) {
-        console.error('Failed to load chats:', error);
+        console.error('Failed to initialize application:', error);
+        // If database connection fails, create local fallback
+        console.log('Creating local fallback database...');
+        await backendService.initializeLocalDB();
       } finally {
         setIsInitialLoading(false);
       }
     };
 
-    loadChats();
+    initializeApp();
   }, []);
 
   // Load messages for a specific chat
@@ -187,7 +203,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Update system prompt for a specific chat
+  // Enhanced updateSystemPrompt with better error handling
   const updateSystemPrompt = async (chatId: string, systemPrompt: string) => {
     try {
       // Update locally first
@@ -206,6 +222,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       
       // Then update on server
       await apiService.updateSystemPrompt(chatId, systemPrompt);
+      console.log(`System prompt updated for chat ${chatId}`);
     } catch (error) {
       console.error("Error updating system prompt:", error);
       throw error;
