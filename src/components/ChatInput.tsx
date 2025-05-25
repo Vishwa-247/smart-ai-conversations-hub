@@ -1,35 +1,36 @@
 
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Plus, FileAudio, FileImage, File } from "lucide-react";
-import { FormEvent, useState, useRef } from "react";
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Send, Paperclip, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ChatInputProps {
   onSend: (message: string, files?: File[]) => void;
   disabled?: boolean;
+  placeholder?: string;
 }
 
-export default function ChatInput({ onSend, disabled = false }: ChatInputProps) {
-  const [input, setInput] = useState("");
-  const [files, setFiles] = useState<File[]>([]);
+export default function ChatInput({ 
+  onSend, 
+  disabled = false, 
+  placeholder = "Type your message..." 
+}: ChatInputProps) {
+  const [message, setMessage] = useState("");
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if ((!input.trim() && files.length === 0) || disabled) return;
-    
-    onSend(input, files.length > 0 ? files : undefined);
-    setInput("");
-    setFiles([]);
+    if (message.trim() || attachedFiles.length > 0) {
+      onSend(message.trim(), attachedFiles);
+      setMessage("");
+      setAttachedFiles([]);
+    }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSubmit(e);
@@ -37,125 +38,104 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const selectedFiles = Array.from(e.target.files);
-      setFiles(prevFiles => [...prevFiles, ...selectedFiles]);
-    }
-  };
-
-  const triggerFileInput = (accept: string) => {
-    if (fileInputRef.current) {
-      fileInputRef.current.accept = accept;
-      fileInputRef.current.click();
-    }
-  };
-
-  const renderSelectedFiles = () => {
-    if (files.length === 0) return null;
+    const files = Array.from(e.target.files || []);
+    const validFiles = files.filter(file => {
+      const validTypes = ['text/plain', 'application/pdf', 'image/*', 'audio/*'];
+      return validTypes.some(type => 
+        type.endsWith('*') ? file.type.startsWith(type.slice(0, -1)) : file.type === type
+      );
+    });
     
-    return (
-      <div className="mt-2 flex flex-wrap gap-2">
-        {files.map((file, index) => (
-          <div 
-            key={index} 
-            className="flex items-center bg-muted/20 rounded-md px-2 py-1 text-xs"
-          >
-            {file.type.startsWith('image/') && <FileImage className="h-3 w-3 mr-1" />}
-            {file.type.startsWith('audio/') && <FileAudio className="h-3 w-3 mr-1" />}
-            {(!file.type.startsWith('image/') && !file.type.startsWith('audio/')) && <File className="h-3 w-3 mr-1" />}
-            <span className="truncate max-w-[150px]">{file.name}</span>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-4 w-4 p-0 ml-1" 
-              onClick={() => setFiles(files.filter((_, i) => i !== index))}
-            >
-              ×
-            </Button>
-          </div>
-        ))}
-        {files.length > 0 && (
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="text-xs h-6" 
-            onClick={() => setFiles([])}
-          >
-            Clear all
-          </Button>
-        )}
-      </div>
-    );
+    setAttachedFiles(prev => [...prev, ...validFiles]);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
+
+  const removeFile = (index: number) => {
+    setAttachedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Auto-resize textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    }
+  }, [message]);
 
   return (
-    <form onSubmit={handleSubmit} className="p-4 border-t border-border/30">
-      <div className="relative max-w-3xl mx-auto">
-        <input
-          type="file"
-          ref={fileInputRef}
-          className="hidden"
-          onChange={handleFileSelect}
-          multiple
-        />
-        
-        {renderSelectedFiles()}
-        
-        <div className="relative">
+    <div className="border-t bg-background p-4">
+      {/* File attachments */}
+      {attachedFiles.length > 0 && (
+        <div className="mb-3 flex flex-wrap gap-2">
+          {attachedFiles.map((file, index) => (
+            <div
+              key={index}
+              className="flex items-center gap-2 bg-secondary px-3 py-1 rounded-full text-sm"
+            >
+              <span className="truncate max-w-[100px]">{file.name}</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-4 w-4 p-0"
+                onClick={() => removeFile(index)}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="flex gap-2">
+        <div className="flex-1 relative">
           <Textarea
-            placeholder="Type your message here..."
-            className="resize-none pr-24 min-h-[50px] max-h-[200px] rounded-xl border border-foreground/20 shadow-sm bg-background"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
+            ref={textareaRef}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
+            placeholder={placeholder}
             disabled={disabled}
+            className={cn(
+              "min-h-[44px] max-h-[200px] resize-none pr-20 chat-input",
+              "focus:ring-2 focus:ring-primary focus:border-transparent"
+            )}
             rows={1}
           />
           
-          <div className="absolute right-2 bottom-1.5 flex gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-9 w-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
-                  disabled={disabled}
-                >
-                  <Plus className="h-5 w-5" />
-                  <span className="sr-only">Add files</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => triggerFileInput('image/*')}>
-                  <FileImage className="h-4 w-4 mr-2" />
-                  <span>Image</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => triggerFileInput('audio/*')}>
-                  <FileAudio className="h-4 w-4 mr-2" />
-                  <span>Audio</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => triggerFileInput('*')}>
-                  <File className="h-4 w-4 mr-2" />
-                  <span>Document</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            
+          {/* File attachment button */}
+          <div className="absolute right-2 top-2 flex gap-1">
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept=".txt,.pdf,.doc,.docx,.md,image/*,audio/*"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
             <Button
-              size="icon"
-              type="submit"
-              disabled={input.trim() === '' && files.length === 0 || disabled}
-              className="h-9 w-9 rounded-lg bg-primary hover:bg-primary/90 transition-all"
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={disabled}
             >
-              <Send className="h-4 w-4" />
-              <span className="sr-only">Send message</span>
+              <Paperclip className="h-4 w-4" />
             </Button>
           </div>
         </div>
-      </div>
-      <div className="text-xs text-center mt-2 text-muted-foreground">
-        Press Enter to send
-      </div>
-    </form>
+
+        <Button 
+          type="submit" 
+          disabled={disabled || (!message.trim() && attachedFiles.length === 0)}
+          size="sm"
+          className="h-[44px] px-4"
+        >
+          <Send className="h-4 w-4" />
+        </Button>
+      </form>
+    </div>
   );
 }

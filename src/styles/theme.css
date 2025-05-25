@@ -1,167 +1,113 @@
-@tailwind base;
 
-@layer base {
-  /* Light Theme */
-  .light {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: 252 75% 66%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 262 83% 58%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 199 91% 61%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 252 75% 66%;
-
-    --radius: 0.8rem;
-
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 222.2 84% 4.9%;
-    --sidebar-primary: 252 75% 66%;
-    --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 210 40% 96.1%;
-    --sidebar-accent-foreground: 222.2 47.4% 11.2%;
-    --sidebar-border: 214.3 31.8% 91.4%;
-    --sidebar-ring: 252 75% 66%;
-  }
-
-  /* Dark Theme - True black */
-  .dark {
-    --background: 0 0% 5%;
-    --foreground: 210 40% 98%;
-
-    --card: 0 0% 7%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 0 0% 7%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 252 75% 66%;
-    --primary-foreground: 0 0% 5%;
-
-    --secondary: 262 83% 58%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 0 0% 15%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 199 91% 61%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 0 0% 20%;
-    --input: 0 0% 20%;
-    --ring: 252 75% 66%;
-    
-    --radius: 0.8rem;
-    
-    --sidebar-background: 0 0% 3%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 252 75% 66%;
-    --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 0 0% 15%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 0 0% 20%;
-    --sidebar-ring: 252 75% 66%;
-  }
-
-  /* Forest Theme */
-  .forest {
-    --background: 150 30% 10%;
-    --foreground: 0 0% 95%;
-
-    --card: 150 30% 12%;
-    --card-foreground: 0 0% 95%;
-
-    --popover: 150 30% 12%;
-    --popover-foreground: 0 0% 95%;
-
-    --primary: 130 50% 50%;
-    --primary-foreground: 150 30% 10%;
-
-    --secondary: 160 50% 40%;
-    --secondary-foreground: 0 0% 95%;
-
-    --muted: 150 30% 15%;
-    --muted-foreground: 150 20% 75%;
-
-    --accent: 130 50% 50%;
-    --accent-foreground: 0 0% 95%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 95%;
-
-    --border: 150 30% 18%;
-    --input: 150 30% 18%;
-    --ring: 130 50% 50%;
-    
-    --sidebar-background: 150 30% 8%;
-    --sidebar-foreground: 0 0% 95%;
-    --sidebar-primary: 130 50% 50%;
-    --sidebar-primary-foreground: 150 30% 10%;
-    --sidebar-accent: 150 30% 15%;
-    --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 150 30% 18%;
-    --sidebar-ring: 130 50% 50%;
-  }
+/* Forest theme enhancements for better visibility */
+:root {
+  --background: 0 0% 100%;
+  --foreground: 240 10% 3.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 240 10% 3.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 10% 3.9%;
+  --primary: 142 76% 36%;
+  --primary-foreground: 355.7 100% 97.3%;
+  --secondary: 240 4.8% 95.9%;
+  --secondary-foreground: 240 5.9% 10%;
+  --muted: 240 4.8% 95.9%;
+  --muted-foreground: 240 3.8% 46.1%;
+  --accent: 240 4.8% 95.9%;
+  --accent-foreground: 240 5.9% 10%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 5.9% 90%;
+  --input: 240 5.9% 90%;
+  --ring: 142 76% 36%;
+  --radius: 0.75rem;
+  --chart-1: 142 76% 36%;
+  --chart-2: 120 60% 50%;
+  --chart-3: 100 45% 55%;
+  --chart-4: 80 30% 60%;
+  --chart-5: 60 15% 65%;
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-
-  body {
-    @apply bg-background text-foreground;
-  }
+.dark {
+  --background: 142 20% 8%;
+  --foreground: 142 15% 92%;
+  --card: 142 20% 10%;
+  --card-foreground: 142 15% 90%;
+  --popover: 142 20% 10%;
+  --popover-foreground: 142 15% 90%;
+  --primary: 142 70% 45%;
+  --primary-foreground: 142 20% 8%;
+  --secondary: 142 15% 15%;
+  --secondary-foreground: 142 15% 85%;
+  --muted: 142 15% 15%;
+  --muted-foreground: 142 10% 60%;
+  --accent: 142 15% 15%;
+  --accent-foreground: 142 15% 85%;
+  --destructive: 0 70% 55%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 142 15% 20%;
+  --input: 142 15% 20%;
+  --ring: 142 70% 45%;
+  --chart-1: 142 70% 45%;
+  --chart-2: 120 60% 55%;
+  --chart-3: 100 50% 60%;
+  --chart-4: 80 40% 65%;
+  --chart-5: 60 30% 70%;
 }
 
-/* Theme transition effect */
-html {
-  transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-/* Make sure text elements are always visible regardless of theme */
-h1, h2, h3, h4, h5, h6, p, span, div, button {
-  transition: color 0.3s ease;
-}
-
-/* Apply border radius to inputs in dark mode */
-.dark input, 
-.dark textarea, 
-.dark .input, 
-.dark .textarea,
-.dark [type="text"],
-.dark [type="email"],
-.dark [type="password"],
-.dark [type="number"],
-.dark [type="search"] {
-  border-radius: var(--radius);
+/* Enhanced button visibility */
+.model-selector-button {
+  background: hsl(var(--card));
   border: 1px solid hsl(var(--border));
+  color: hsl(var(--foreground));
 }
 
-.dark .system-prompt-container {
-  border-radius: var(--radius);
+.model-selector-button:hover {
+  background: hsl(var(--accent));
+  border-color: hsl(var(--primary));
+}
+
+/* Enhanced dropdown styling */
+.dropdown-item-highlight:hover {
+  background: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
+}
+
+/* Better text contrast */
+.chat-message {
+  background: hsl(var(--card));
   border: 1px solid hsl(var(--border));
-  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+.chat-input {
+  background: hsl(var(--background));
+  border: 2px solid hsl(var(--border));
+  color: hsl(var(--foreground));
+}
+
+.chat-input:focus {
+  border-color: hsl(var(--primary));
+  outline: none;
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.1);
+}
+
+/* Sidebar enhancements */
+.sidebar-item {
+  background: transparent;
+  border: 1px solid transparent;
+  color: hsl(var(--muted-foreground));
+  transition: all 0.2s;
+}
+
+.sidebar-item:hover {
+  background: hsl(var(--accent));
+  border-color: hsl(var(--border));
+  color: hsl(var(--foreground));
+}
+
+.sidebar-item.active {
+  background: hsl(var(--primary) / 0.1);
+  border-color: hsl(var(--primary));
+  color: hsl(var(--primary));
 }

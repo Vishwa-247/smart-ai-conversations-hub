@@ -2,15 +2,17 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { FileText, Upload, CheckCircle, AlertCircle } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FileText, Upload, CheckCircle, X } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { apiClient } from "@/services/apiClient";
 
 interface DocumentUploadProps {
+  onClose: () => void;
   onUploadSuccess?: (filename: string, chunkCount: number) => void;
 }
 
-export default function DocumentUpload({ onUploadSuccess }: DocumentUploadProps) {
+export default function DocumentUpload({ onClose, onUploadSuccess }: DocumentUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
   const { toast } = useToast();
@@ -45,6 +47,8 @@ export default function DocumentUpload({ onUploadSuccess }: DocumentUploadProps)
     setUploading(true);
 
     try {
+      console.log(`📁 Uploading document: ${file.name}`);
+      
       const formData = new FormData();
       formData.append('file', file);
 
@@ -60,15 +64,17 @@ export default function DocumentUpload({ onUploadSuccess }: DocumentUploadProps)
       
       toast({
         title: "Document uploaded successfully",
-        description: `${filename} has been processed into ${chunk_count} chunks and is ready for queries.`,
+        description: `${filename} has been processed into ${chunk_count} chunks and is ready for enhanced responses.`,
       });
 
       if (onUploadSuccess) {
         onUploadSuccess(filename, chunk_count);
       }
 
+      console.log(`✅ Document uploaded successfully: ${filename}`);
+
     } catch (error: any) {
-      console.error('Upload error:', error);
+      console.error('❌ Upload error:', error);
       toast({
         title: "Upload failed",
         description: error.response?.data?.detail || "Failed to upload document",
@@ -82,47 +88,63 @@ export default function DocumentUpload({ onUploadSuccess }: DocumentUploadProps)
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <FileText className="h-5 w-5 text-blue-500" />
-        <h3 className="font-medium">Upload Documents</h3>
-      </div>
-      
-      <div className="border-2 border-dashed border-border/50 rounded-lg p-6 text-center">
-        <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-        <p className="text-sm text-muted-foreground mb-4">
-          Upload PDF, DOCX, TXT, or MD files to enhance AI responses
-        </p>
-        
-        <Input
-          type="file"
-          accept=".pdf,.docx,.txt,.md"
-          onChange={handleFileUpload}
-          disabled={uploading}
-          className="hidden"
-          id="document-upload"
-        />
-        
-        <Button
-          onClick={() => document.getElementById('document-upload')?.click()}
-          disabled={uploading}
-          variant="outline"
-        >
-          {uploading ? "Uploading..." : "Choose File"}
-        </Button>
-      </div>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <Card className="w-full max-w-md">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5 text-blue-500" />
+            Upload Documents
+          </CardTitle>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="border-2 border-dashed border-border/50 rounded-lg p-6 text-center">
+            <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground mb-4">
+              Upload PDF, DOCX, TXT, or MD files to enhance AI responses with document context
+            </p>
+            
+            <Input
+              type="file"
+              accept=".pdf,.docx,.txt,.md"
+              onChange={handleFileUpload}
+              disabled={uploading}
+              className="hidden"
+              id="document-upload"
+            />
+            
+            <Button
+              onClick={() => document.getElementById('document-upload')?.click()}
+              disabled={uploading}
+              variant="outline"
+              className="w-full"
+            >
+              {uploading ? "Uploading..." : "Choose File"}
+            </Button>
+          </div>
 
-      {uploadedFiles.length > 0 && (
-        <div className="space-y-2">
-          <p className="text-sm font-medium">Uploaded Documents:</p>
-          {uploadedFiles.map((filename, index) => (
-            <div key={index} className="flex items-center gap-2 text-sm text-green-600">
-              <CheckCircle className="h-4 w-4" />
-              <span>{filename}</span>
+          {uploadedFiles.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Uploaded Documents:</p>
+              {uploadedFiles.map((filename, index) => (
+                <div key={index} className="flex items-center gap-2 text-sm text-green-600">
+                  <CheckCircle className="h-4 w-4" />
+                  <span>{filename}</span>
+                </div>
+              ))}
+              <p className="text-xs text-muted-foreground">
+                These documents will now be used to enhance AI responses with relevant context.
+              </p>
             </div>
-          ))}
-        </div>
-      )}
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

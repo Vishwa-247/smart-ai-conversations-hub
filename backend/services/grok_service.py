@@ -38,7 +38,8 @@ def ask_grok(messages):
             "messages": formatted_messages,
             "model": "grok-2-1212",
             "stream": False,
-            "temperature": 0.7
+            "temperature": 0.7,
+            "max_tokens": 2048
         }
         
         print(f"🟡 Sending request to Grok API with {len(formatted_messages)} messages")
@@ -66,7 +67,12 @@ def ask_grok(messages):
         else:
             print(f"❌ Grok API error: {response.status_code}")
             print(f"Error details: {response.text}")
-            return f"Grok API error: {response.status_code}. Please check your API key and try again."
+            if response.status_code == 401:
+                return "Grok API authentication failed. Please check your API key."
+            elif response.status_code == 429:
+                return "Grok API rate limit exceeded. Please try again later."
+            else:
+                return f"Grok API error: {response.status_code}. Please try again."
             
     except requests.exceptions.Timeout:
         print("⏰ Grok API request timed out")

@@ -1,35 +1,87 @@
 
 import { Button } from "@/components/ui/button";
-import { useSidebar } from "@/contexts/SidebarContext";
-import { Menu, Settings } from "lucide-react";
-import ThemeSelector from "./ThemeSelector";
+import { Settings, FileText, Plus } from "lucide-react";
 import { useChat } from "@/contexts/ChatContext";
+import ModelSelector from "./ModelSelector";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useState } from "react";
+import SystemPromptEditor from "./SystemPromptEditor";
+import DocumentUpload from "./DocumentUpload";
 
 export default function ChatHeader() {
-  const { toggle } = useSidebar();
-  const { currentChatId, chats } = useChat();
+  const { createChat, currentModel, chats, currentChatId } = useChat();
+  const [showSystemPromptEditor, setShowSystemPromptEditor] = useState(false);
+  const [showDocumentUpload, setShowDocumentUpload] = useState(false);
   
-  // Find current chat title
-  const currentChat = chats.find((chat) => chat.id === currentChatId);
-  
+  const currentChat = chats.find(c => c.id === currentChatId);
+
+  const handleNewChat = () => {
+    createChat(currentModel);
+  };
+
   return (
-    <header className="sticky top-0 z-10 flex items-center justify-between border-b bg-background/95 p-4 backdrop-blur">
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" onClick={toggle}>
-          <Menu className="h-5 w-5" />
-          <span className="sr-only">Toggle sidebar</span>
-        </Button>
-        <h1 className="text-lg font-medium">
-          {currentChat?.title || "AI Chat Assistant"}
-        </h1>
+    <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="flex h-14 items-center justify-between px-4">
+        <div className="flex items-center gap-3">
+          <Button
+            onClick={handleNewChat}
+            variant="outline"
+            size="sm"
+            className="gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            New Chat
+          </Button>
+          
+          <ModelSelector />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => setShowDocumentUpload(true)}
+            variant="outline"
+            size="sm"
+            className="gap-2"
+          >
+            <FileText className="h-4 w-4" />
+            Upload
+          </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Settings className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => setShowSystemPromptEditor(true)}>
+                Edit System Prompt
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                View Performance
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
-      <div className="flex items-center gap-2">
-        <ThemeSelector />
-        <Button variant="ghost" size="icon">
-          <Settings className="h-5 w-5" />
-          <span className="sr-only">Settings</span>
-        </Button>
-      </div>
-    </header>
+
+      {showSystemPromptEditor && (
+        <SystemPromptEditor 
+          chatId={currentChatId}
+          onClose={() => setShowSystemPromptEditor(false)}
+        />
+      )}
+
+      {showDocumentUpload && (
+        <DocumentUpload onClose={() => setShowDocumentUpload(false)} />
+      )}
+    </div>
   );
 }
