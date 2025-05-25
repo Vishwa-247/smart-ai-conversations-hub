@@ -5,10 +5,11 @@ import ChatInput from "@/components/ChatInput";
 import { useChatActions } from "@/hooks/useChatActions";
 import ChatMessageList from "./ChatMessageList";
 import EmptyChat from "./EmptyChat";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
+import { useChat } from "@/contexts/ChatContext";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Chat() {
+  const { isInitialLoading } = useChat();
   const {
     currentChatId,
     currentChat,
@@ -24,16 +25,29 @@ export default function Chat() {
     getSystemPrompt
   } = useChatActions();
   
-  const [isSystemPromptRequired, setIsSystemPromptRequired] = useState(false);
-  const { toast } = useToast();
+  // Show loading skeleton while initial data loads
+  if (isInitialLoading) {
+    return (
+      <div className="flex h-screen flex-col">
+        <div className="border-b p-4">
+          <Skeleton className="h-8 w-32" />
+        </div>
+        <div className="flex-1 p-4 space-y-4">
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-4 w-1/2" />
+          <Skeleton className="h-4 w-2/3" />
+        </div>
+        <div className="border-t p-4">
+          <Skeleton className="h-20 w-full" />
+        </div>
+      </div>
+    );
+  }
   
-  // Show system prompt input when starting a new chat or when already in a chat with no messages
+  // Show system prompt input when starting a new chat
   useEffect(() => {
     if (!currentChatId || (currentChat && currentChat.messages.length === 0)) {
       setShowSystemPrompt(true);
-      setIsSystemPromptRequired(false); // Never require system prompt
-    } else {
-      setIsSystemPromptRequired(false);
     }
     
     // Load system prompt if available
@@ -47,15 +61,14 @@ export default function Chat() {
     }
   }, [currentChatId, currentChat, getSystemPrompt, setShowSystemPrompt, setSystemPrompt]);
   
-  // Custom send handler to validate system prompt and use message as system prompt if needed
-  const handleSendWithValidation = (content: string, files?: File[]) => {
-    // For new chats, we can optionally use first message as system prompt
-    if ((!currentChatId || (currentChat && currentChat.messages.length === 0)) && !systemPrompt.trim() && showSystemPrompt) {
-      // Optionally use first message as system prompt
+  // Enhanced send handler for system prompt workflow
+  const handleSendWithSystemPrompt = (content: string, files?: File[]) => {
+    // For new chats with no messages, first message can be system prompt
+    if ((!currentChatId || (currentChat && currentChat.messages.length === 0)) && showSystemPrompt && !systemPrompt.trim()) {
+      // If no system prompt is set and this is the first message, ask if they want to use it as system prompt
       setSystemPrompt(content);
     }
     
-    // Send message normally regardless of system prompt
     handleSendMessage(content, files);
   };
   
@@ -64,10 +77,10 @@ export default function Chat() {
       <EmptyChat
         systemPrompt={systemPrompt}
         setSystemPrompt={setSystemPrompt}
-        onSendMessage={handleSendWithValidation}
+        onSendMessage={handleSendWithSystemPrompt}
         isLoading={isLoading}
-        showSystemPrompt={true} // Always show for new chats
-        isRequired={false} // Never require system prompt
+        showSystemPrompt={true}
+        isRequired={false}
       />
     );
   }
@@ -88,7 +101,7 @@ export default function Chat() {
         />
       </div>
       
-      <ChatInput onSend={handleSendWithValidation} disabled={isLoading} />
+      <ChatInput onSend={handleSendWithSystemPrompt} disabled={isLoading} />
     </div>
   );
 }

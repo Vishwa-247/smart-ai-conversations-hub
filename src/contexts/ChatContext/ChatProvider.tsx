@@ -10,10 +10,78 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [currentModel, setCurrentModel] = useState<ModelType>('phi3:mini');
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+
+  // Load existing chats on app startup
+  useEffect(() => {
+    const loadChats = async () => {
+      try {
+        console.log('Loading existing chats from backend...');
+        const existingChats = await apiService.getChats();
+        
+        // Convert backend chat format to frontend format
+        const formattedChats: Chat[] = existingChats.map(chat => ({
+          id: chat._id || chat.id || '',
+          title: chat.title,
+          messages: [], // Messages will be loaded when chat is selected
+          model: chat.model,
+          createdAt: new Date(chat.created_at),
+          updatedAt: new Date(chat.updated_at),
+          systemPrompt: chat.system_prompt,
+        }));
+        
+        setChats(formattedChats);
+        console.log(`Loaded ${formattedChats.length} chats from backend`);
+        
+        // Auto-select the most recent chat if available
+        if (formattedChats.length > 0) {
+          const mostRecentChat = formattedChats[0];
+          setCurrentChatId(mostRecentChat.id);
+          setCurrentModel(mostRecentChat.model);
+          
+          // Load messages for the selected chat
+          await loadChatMessages(mostRecentChat.id);
+        }
+      } catch (error) {
+        console.error('Failed to load chats:', error);
+      } finally {
+        setIsInitialLoading(false);
+      }
+    };
+
+    loadChats();
+  }, []);
+
+  // Load messages for a specific chat
+  const loadChatMessages = async (chatId: string) => {
+    try {
+      console.log(`Loading messages for chat ${chatId}`);
+      const messages = await apiService.getChatHistory(chatId);
+      
+      // Convert backend message format to frontend format
+      const formattedMessages: Message[] = messages.map(msg => ({
+        id: msg._id,
+        role: msg.role,
+        content: msg.content,
+        timestamp: new Date(msg.timestamp),
+        model: undefined, // Backend doesn't store this
+      }));
+      
+      // Update the chat with loaded messages
+      setChats(prev => prev.map(chat => 
+        chat.id === chatId 
+          ? { ...chat, messages: formattedMessages }
+          : chat
+      ));
+      
+      console.log(`Loaded ${formattedMessages.length} messages for chat ${chatId}`);
+    } catch (error) {
+      console.error(`Failed to load messages for chat ${chatId}:`, error);
+    }
+  };
 
   // Create a new chat with the specified model
   const createChat = (model: ModelType, systemPrompt?: string) => {
-    // System prompt is now optional
     const newChatId = Date.now().toString();
     const newChat: Chat = {
       id: newChatId,
@@ -22,7 +90,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       model,
       createdAt: new Date(),
       updatedAt: new Date(),
-      systemPrompt, // Optional - can be undefined
+      systemPrompt,
     };
     
     setChats((prev) => [newChat, ...prev]);
@@ -30,30 +98,32 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     setCurrentModel(model);
   };
 
-  // Select an existing chat
-  const selectChat = (id: string) => {
+  // Select an existing chat and load its messages
+  const selectChat = async (id: string) => {
     const chat = chats.find((c) => c.id === id);
     if (chat) {
       setCurrentChatId(id);
       setCurrentModel(chat.model);
+      
+      // Load messages if not already loaded
+      if (chat.messages.length === 0) {
+        await loadChatMessages(id);
+      }
     }
   };
 
   // Add a message to a specific chat
   const addMessage = (chatId: string, message: Omit<Message, 'id' | 'timestamp'>) => {
     setChats((prev) => {
-      // Check if the chat already exists
       const existingChat = prev.find((chat) => chat.id === chatId);
       
       if (existingChat) {
         // Update existing chat
         return prev.map((chat) => {
           if (chat.id === chatId) {
-            // Auto-name chat based on first user message if it's unnamed
             const shouldUpdateTitle = chat.title === 'New Chat' && message.role === 'user' && chat.messages.length === 0;
             const newTitle = shouldUpdateTitle ? message.content.slice(0, 30) + (message.content.length > 30 ? '...' : '') : chat.title;
             
-            // Add message to chat
             const newMessage: Message = {
               ...message,
               id: Date.now().toString(),
@@ -88,10 +158,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           updatedAt: new Date(),
         };
         
-        // Set this as the current chat
         setCurrentChatId(chatId);
-        
-        // Add the new chat to the beginning of the list
         return [newChat, ...prev.filter(chat => chat.id !== chatId)];
       }
     });
@@ -100,18 +167,17 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   // Delete a chat
   const deleteChat = async (id: string) => {
     try {
-      // Try to delete from the backend first
       await apiService.deleteChat(id);
       
-      // Then update the local state
       setChats((prev) => prev.filter((chat) => chat.id !== id));
       
-      // If we deleted the current chat, select another one
       if (currentChatId === id) {
         const remainingChats = chats.filter((chat) => chat.id !== id);
         if (remainingChats.length > 0) {
           setCurrentChatId(remainingChats[0].id);
           setCurrentModel(remainingChats[0].model);
+          // Load messages for the new current chat
+          await loadChatMessages(remainingChats[0].id);
         } else {
           setCurrentChatId(null);
         }
@@ -122,20 +188,28 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Update system prompt for a specific chat
-  const updateSystemPrompt = (chatId: string, systemPrompt: string) => {
-    // Now we allow empty system prompts
-    setChats((prev) => {
-      return prev.map((chat) => {
-        if (chat.id === chatId) {
-          return {
-            ...chat,
-            systemPrompt,
-            updatedAt: new Date(),
-          };
-        }
-        return chat;
+  const updateSystemPrompt = async (chatId: string, systemPrompt: string) => {
+    try {
+      // Update locally first
+      setChats((prev) => {
+        return prev.map((chat) => {
+          if (chat.id === chatId) {
+            return {
+              ...chat,
+              systemPrompt,
+              updatedAt: new Date(),
+            };
+          }
+          return chat;
+        });
       });
-    });
+      
+      // Then update on server
+      await apiService.updateSystemPrompt(chatId, systemPrompt);
+    } catch (error) {
+      console.error("Error updating system prompt:", error);
+      throw error;
+    }
   };
   
   // Get system prompt for a specific chat
@@ -143,13 +217,6 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     const chat = chats.find((c) => c.id === chatId);
     return chat?.systemPrompt;
   };
-
-  // Instead of automatically creating a chat, just set the current model
-  useEffect(() => {
-    if (chats.length === 0) {
-      setCurrentChatId(null);
-    }
-  }, [chats]);
 
   const value = {
     chats,
@@ -164,6 +231,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     setIsLoading,
     updateSystemPrompt,
     getSystemPrompt,
+    isInitialLoading,
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

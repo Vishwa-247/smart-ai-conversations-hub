@@ -1,3 +1,4 @@
+
 export type ModelType = 'phi3:mini' | 'gemini-2.0-flash';
 
 export interface Message {
@@ -37,6 +38,7 @@ export interface ChatContextType {
   deleteChat: (id: string) => Promise<void>;
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
-  updateSystemPrompt: (chatId: string, systemPrompt: string) => void;
+  updateSystemPrompt: (chatId: string, systemPrompt: string) => Promise<void>;
   getSystemPrompt: (chatId: string) => string | undefined;
+  isInitialLoading?: boolean;
 }

@@ -1,21 +1,34 @@
+
 import { apiClient } from './apiClient';
 import { ChatRequest, ChatResponse, Chat, ChatsResponse, ChatHistoryResponse, ChatMessage, ModelType } from './types';
 import { callGeminiAPI } from './geminiService';
 
-// Send a chat message to the backend
+// Timeout for API requests (30 seconds)
+const API_TIMEOUT = 30000;
+
+// Create a timeout promise
+const createTimeoutPromise = (timeout: number) => {
+  return new Promise((_, reject) => {
+    setTimeout(() => reject(new Error('Request timeout')), timeout);
+  });
+};
+
+// Send a chat message to the backend with timeout handling
 export const sendChatMessage = async (request: ChatRequest): Promise<ChatResponse> => {
   try {
-    // Handle file uploads if present
     if (request.files && request.files.length > 0) {
       console.log(`Preparing to upload ${request.files.length} files`);
-      // We would need to implement a multipart/form-data upload here
     }
     
     console.log('Sending request to backend:', request);
-    const response = await apiClient.post<ChatResponse>('/chat', request);
+    
+    // Race between the actual request and timeout
+    const responsePromise = apiClient.post<ChatResponse>('/chat', request);
+    const timeoutPromise = createTimeoutPromise(API_TIMEOUT);
+    
+    const response = await Promise.race([responsePromise, timeoutPromise]) as any;
     console.log('Response from backend:', response.data);
     
-    // Ensure we have the response content in the expected format
     if (response.data.content && !response.data.response) {
       response.data.response = response.data.content;
     }
@@ -23,6 +36,9 @@ export const sendChatMessage = async (request: ChatRequest): Promise<ChatRespons
     return response.data;
   } catch (error: any) {
     console.error('Error in sendChatMessage:', error);
+    if (error.message === 'Request timeout') {
+      throw new Error('Request timed out. The model might be taking longer than usual to respond.');
+    }
     if (error.response?.data?.detail) {
       throw new Error(error.response.data.detail);
     }
@@ -92,7 +108,7 @@ export const updateSystemPrompt = async (chatId: string, systemPrompt: string): 
   }
 };
 
-// Send a message to the API, handling both new chats and existing chats
+// Send a message to the API with optimized async handling
 export const sendMessage = async (
   chatId: string,
   message: string,
@@ -101,7 +117,7 @@ export const sendMessage = async (
   files?: File[]
 ): Promise<{ role: 'assistant', content: string, conversation_id?: string }> => {
   
-  // Handle Gemini model directly
+  // Handle Gemini model directly with timeout
   if (model === 'gemini-2.0-flash') {
     try {
       const messages = [];
@@ -112,20 +128,27 @@ export const sendMessage = async (
       
       messages.push({ role: 'user' as const, content: message });
       
-      const response = await callGeminiAPI(messages);
+      // Race between Gemini API call and timeout
+      const geminiPromise = callGeminiAPI(messages);
+      const timeoutPromise = createTimeoutPromise(API_TIMEOUT);
+      
+      const response = await Promise.race([geminiPromise, timeoutPromise]) as string;
       
       return {
         role: 'assistant',
         content: response,
         conversation_id: chatId || `gemini_${Date.now()}`
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error('Gemini API error:', error);
+      if (error.message === 'Request timeout') {
+        throw new Error('Gemini API timed out. Please try again.');
+      }
       throw new Error('Failed to get response from Gemini');
     }
   }
 
-  // For other models, use the existing backend API
+  // For other models, use the existing backend API with timeout
   const request: ChatRequest = {
     model,
     message,
