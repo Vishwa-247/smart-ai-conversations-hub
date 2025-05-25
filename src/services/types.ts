@@ -1,51 +1,36 @@
-export type ModelType = 'gemini-pro' | 'claude-3-sonnet' | 'grok-1';
 
-export interface ChatMessage {
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-  timestamp?: string;
-}
-
-export interface CustomModel {
-  id: string;
-  name: string;
-  apiEndpoint: string;
-  apiKey: string;
-}
+// Base types for API communication
+export type ModelType = 'phi3:mini';
 
 export interface ChatRequest {
   model: ModelType;
   message: string;
   conversation_id?: string;
-  custom_model?: CustomModel;
   system_prompt?: string;
+  use_rag?: boolean;
   files?: File[];
 }
 
 export interface ChatResponse {
   role: 'assistant';
-  response: string;
+  content: string;
   conversation_id: string;
   model_used?: string;
-  citations?: Array<{
-    source: string;
-    filename: string;
-    chunk_index: number;
-    similarity: number;
-  }>;
+  citations?: Citation[];
   reasoning?: string;
+  response: string; // Alias for content to match backend
 }
 
-export interface DocumentUploadResponse {
-  success: boolean;
-  message: string;
+export interface Citation {
+  source: string;
   filename: string;
-  chunk_count?: number;
+  chunk_index: number;
+  similarity: number;
 }
 
 export interface Chat {
   _id: string;
-  user_id: string;
+  id?: string;
   title: string;
   model: ModelType;
   created_at: string;
@@ -55,10 +40,21 @@ export interface Chat {
 
 export interface ChatsResponse {
   chats: Chat[];
-  error?: string;
+}
+
+export interface ChatMessage {
+  _id: string;
+  chat_id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp: string;
 }
 
 export interface ChatHistoryResponse {
   messages: ChatMessage[];
-  error?: string;
+}
+
+export interface CustomModel {
+  name: string;
+  displayName: string;
 }

@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect } from 'react';
 import { apiService } from '@/services/api';
 import { Chat, ChatContextType, Message, ModelType } from '@/types/chat';
@@ -7,7 +8,7 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [chats, setChats] = useState<Chat[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
-  const [currentModel, setCurrentModel] = useState<ModelType>('gemini-pro');
+  const [currentModel, setCurrentModel] = useState<ModelType>('phi3:mini');
   const [isLoading, setIsLoading] = useState(false);
 
   // Create a new chat with the specified model

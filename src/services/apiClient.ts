@@ -1,8 +1,8 @@
 
 import axios from 'axios';
 
-// API base URL - use environment variable with fallback
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+// API base URL - updated for FastAPI backend
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
 
 console.log('API_BASE_URL:', API_BASE_URL);
 
@@ -44,7 +44,7 @@ apiClient.interceptors.response.use(
       console.error('Error Status:', error.response.status);
       console.error('Error Data:', error.response.data);
     } else if (error.request) {
-      console.error('No Response Received. Is the server running?');
+      console.error('No Response Received. Is the server running on port 8000?');
     } else {
       console.error('Error Message:', error.message);
     }
@@ -53,7 +53,7 @@ apiClient.interceptors.response.use(
     if (error.code === 'ECONNABORTED') {
       return Promise.reject(new Error('Request timed out. Please try again.'));
     } else if (!error.response) {
-      return Promise.reject(new Error('Cannot reach the server. Please check your connection.'));
+      return Promise.reject(new Error('Cannot reach the server. Please check that the FastAPI server is running on port 8000.'));
     } else if (error.response.status === 401) {
       return Promise.reject(new Error('Authentication failed. Please check your API keys.'));
     } else {

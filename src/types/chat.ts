@@ -1,13 +1,20 @@
 
-// Define our models
-export type ModelType = 'gemini-pro' | 'claude-3-sonnet' | 'grok-1';
+export type ModelType = 'phi3:mini';
 
 export interface Message {
   id: string;
-  role: 'system' | 'user' | 'assistant';
+  role: 'user' | 'assistant' | 'system';
   content: string;
   timestamp: Date;
-  model?: ModelType;
+  model?: string;
+  citations?: Citation[];
+}
+
+export interface Citation {
+  source: string;
+  filename: string;
+  chunk_index: number;
+  similarity: number;
 }
 
 export interface Chat {
@@ -28,9 +35,9 @@ export interface ChatContextType {
   createChat: (model: ModelType, systemPrompt?: string) => void;
   selectChat: (id: string) => void;
   addMessage: (chatId: string, message: Omit<Message, 'id' | 'timestamp'>) => void;
-  deleteChat: (id: string) => void;
+  deleteChat: (id: string) => Promise<void>;
   isLoading: boolean;
-  setIsLoading: (isLoading: boolean) => void;
+  setIsLoading: (loading: boolean) => void;
   updateSystemPrompt: (chatId: string, systemPrompt: string) => void;
   getSystemPrompt: (chatId: string) => string | undefined;
 }

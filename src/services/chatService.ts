@@ -14,6 +14,12 @@ export const sendChatMessage = async (request: ChatRequest): Promise<ChatRespons
     console.log('Sending request to backend:', request);
     const response = await apiClient.post<ChatResponse>('/chat', request);
     console.log('Response from backend:', response.data);
+    
+    // Ensure we have the response content in the expected format
+    if (response.data.content && !response.data.response) {
+      response.data.response = response.data.content;
+    }
+    
     return response.data;
   } catch (error: any) {
     console.error('Error in sendChatMessage:', error);
@@ -98,6 +104,7 @@ export const sendMessage = async (
     model,
     message,
     conversation_id: chatId || undefined,
+    use_rag: true, // Always enable RAG for document-enhanced responses
   };
 
   // Add system prompt if provided
@@ -114,7 +121,7 @@ export const sendMessage = async (
   
   return {
     role: 'assistant',
-    content: response.response,
+    content: response.response || response.content,
     conversation_id: response.conversation_id
   };
 };
