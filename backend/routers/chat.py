@@ -1,3 +1,4 @@
+
 from datetime import datetime
 
 from database.mongodb import MongoDB
@@ -6,6 +7,12 @@ from services.claude_service import ask_claude
 from services.gemini_service import ask_gemini
 from services.grok_service import ask_grok
 from services.openai_service import ask_openai
+from services.ollama_service import ask_ollama
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Initialize MongoDB client
 mongo_db = MongoDB()
@@ -29,48 +36,44 @@ default_system_message = {
 @chat_router.route('/chat', methods=['POST'])
 def chat():
     data = request.json
-    print(f"Received request data: {data}")
+    logger.info(f"📨 Received chat request: {data}")
+    
     model = data.get('model', 'gpt-4o')
     message = data.get('message', '')
     conversation_id = data.get('conversation_id')
     system_prompt = data.get('system_prompt', None)
     
+    logger.info(f"🎯 Processing request - Model: {model}, ConvID: {conversation_id}")
+    
     try:
         # Create a new conversation if it doesn't exist
         if not conversation_id:
-            print("Creating new conversation...")
-            # If system_prompt is provided, use it to create the chat
+            logger.info("🆕 Creating new conversation...")
             if system_prompt:
                 conversation_id = mongo_db.create_chat(model=model, title=message[:30], system_prompt=system_prompt)
-                print(f"New conversation created with ID: {conversation_id} and custom system prompt")
-                # Initialize with provided system message in cache
+                logger.info(f"✅ New conversation created with ID: {conversation_id} and custom system prompt")
                 conversations_cache[conversation_id] = [{
                     "role": "system",
                     "content": system_prompt
                 }]
             else:
                 conversation_id = mongo_db.create_chat(model=model, title=message[:30])
-                print(f"New conversation created with ID: {conversation_id} with default system prompt")
-                # Initialize with default system message in cache
+                logger.info(f"✅ New conversation created with ID: {conversation_id} with default system prompt")
                 conversations_cache[conversation_id] = [default_system_message]
         elif conversation_id not in conversations_cache:
-            print(f"Loading conversation history for ID: {conversation_id}")
-            # Load conversation history from DB to cache
+            logger.info(f"📚 Loading conversation history for ID: {conversation_id}")
             messages_db = mongo_db.get_chat_history(conversation_id)
             
-            # Get system prompt from the database
             chat_data = mongo_db.get_chat_by_id(conversation_id)
             system_prompt_content = chat_data.get('system_prompt', default_system_message["content"]) if chat_data else default_system_message["content"]
             
-            # Convert to the format needed by LLM clients
             conversations_cache[conversation_id] = [{
                 "role": "system",
                 "content": system_prompt_content
             }]
             
-            # Add user and assistant messages
             for msg in messages_db:
-                if msg["role"] != "system":  # Skip system messages as we've already added our system message
+                if msg["role"] != "system":
                     conversations_cache[conversation_id].append({
                         "role": msg["role"],
                         "content": msg["content"]
@@ -83,23 +86,46 @@ def chat():
         })
         
         # Save user message to MongoDB
-        print("Saving user message to MongoDB...")
+        logger.info("💾 Saving user message to MongoDB...")
         mongo_db.save_message(conversation_id, "user", message)
         
         # Get response based on selected model
-        print(f"Getting response from {model}...")
-        if model in ['gpt-4o', 'gpt-4o-mini']:
-            response_text = ask_openai(conversations_cache[conversation_id], model)
-        elif model == 'gemini-pro':
-            response_text = ask_gemini(conversations_cache[conversation_id])
-        elif model == 'claude-3-sonnet':
-            response_text = ask_claude(conversations_cache[conversation_id])
-        elif model == 'grok-1':
-            response_text = ask_grok(conversations_cache[conversation_id])
-        else:
-            response_text = ask_openai(conversations_cache[conversation_id], "gpt-4o")
+        logger.info(f"🤖 Getting response from {model}...")
+        response_text = ""
         
-        print("Response received, saving to MongoDB...")
+        try:
+            if model in ['gpt-4o', 'gpt-4o-mini']:
+                logger.info(f"🔵 Calling OpenAI with model {model}")
+                response_text = ask_openai(conversations_cache[conversation_id], model)
+            elif model == 'gemini-2.0-flash':
+                logger.info("🟢 Calling Gemini API")
+                response_text = ask_gemini(conversations_cache[conversation_id])
+            elif model == 'claude-3-sonnet':
+                logger.info("🟣 Calling Claude API")
+                response_text = ask_claude(conversations_cache[conversation_id])
+            elif model == 'grok-2':
+                logger.info("🟡 Calling Grok API")
+                response_text = ask_grok(conversations_cache[conversation_id])
+            elif model == 'phi3:mini':
+                logger.info("🟠 Calling Ollama with phi3:mini")
+                response_text = ask_ollama(conversations_cache[conversation_id], model)
+            else:
+                logger.warning(f"⚠️ Unknown model {model}, defaulting to OpenAI")
+                response_text = ask_openai(conversations_cache[conversation_id], "gpt-4o")
+            
+            logger.info(f"✅ Response received from {model}: {len(response_text)} characters")
+            
+        except Exception as model_error:
+            logger.error(f"❌ Error with {model}: {str(model_error)}")
+            # Fallback to a working model
+            logger.info("🔄 Attempting fallback to Gemini...")
+            try:
+                response_text = ask_gemini(conversations_cache[conversation_id])
+                logger.info("✅ Fallback successful")
+            except Exception as fallback_error:
+                logger.error(f"❌ Fallback failed: {str(fallback_error)}")
+                response_text = f"Sorry, I encountered an error processing your request with {model}. Please try again or switch to a different model."
+        
         # Add assistant response to conversation cache
         conversations_cache[conversation_id].append({
             "role": "assistant",
@@ -107,7 +133,10 @@ def chat():
         })
         
         # Save assistant response to MongoDB
+        logger.info("💾 Saving assistant response to MongoDB...")
         mongo_db.save_message(conversation_id, "assistant", response_text)
+        
+        logger.info(f"🎉 Request completed successfully for conversation {conversation_id}")
         
         return jsonify({
             "role": "assistant",
@@ -118,33 +147,32 @@ def chat():
     except Exception as e:
         import traceback
         error_details = traceback.format_exc()
-        print(f"Detailed error: {error_details}")
+        logger.error(f"💥 Detailed error: {error_details}")
         return jsonify({
             "error": str(e),
             "details": error_details
         }), 500
 
+# ... keep existing code (other endpoints like get_chats, delete_chat, etc.)
 @chat_router.route('/chats', methods=['GET'])
 def get_chats():
     try:
-        # Get all chats for anonymous user (you can add user authentication later)
         chats = mongo_db.get_all_chats()
         return jsonify({"chats": chats})
         
     except Exception as e:
-        print(f"Error: {str(e)}")
+        logger.error(f"Error: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 @chat_router.route('/chats/<chat_id>', methods=['GET'])
 def get_chat_history(chat_id):
     try:
-        # Get conversation history
         limit = request.args.get('limit', 50, type=int)
         messages = mongo_db.get_chat_history(chat_id, limit)
         return jsonify({"messages": messages})
         
     except Exception as e:
-        print(f"Error: {str(e)}")
+        logger.error(f"Error: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 @chat_router.route('/chats/<chat_id>', methods=['DELETE'])
@@ -153,7 +181,6 @@ def delete_chat(chat_id):
         success = mongo_db.delete_chat(chat_id)
         
         if success:
-            # Remove from cache if exists
             if chat_id in conversations_cache:
                 del conversations_cache[chat_id]
             
@@ -168,7 +195,7 @@ def delete_chat(chat_id):
             }), 500
         
     except Exception as e:
-        print(f"Error: {str(e)}")
+        logger.error(f"Error: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 @chat_router.route('/chats/<chat_id>/system-prompt', methods=['PATCH'])
@@ -177,20 +204,15 @@ def update_system_prompt(chat_id):
         data = request.json
         system_prompt = data.get('system_prompt', '')
         
-        # Update system prompt in the database
         success = mongo_db.update_system_prompt(chat_id, system_prompt)
         
         if success:
-            # Update system prompt in cache if it exists
             if chat_id in conversations_cache:
-                # Find the system message index
                 system_idx = next((i for i, msg in enumerate(conversations_cache[chat_id]) if msg["role"] == "system"), None)
                 
                 if system_idx is not None:
-                    # Update existing system message
                     conversations_cache[chat_id][system_idx]["content"] = system_prompt
                 else:
-                    # Add system message at the beginning
                     conversations_cache[chat_id].insert(0, {
                         "role": "system",
                         "content": system_prompt
@@ -207,5 +229,5 @@ def update_system_prompt(chat_id):
             }), 500
         
     except Exception as e:
-        print(f"Error: {str(e)}")
+        logger.error(f"Error: {str(e)}")
         return jsonify({"error": str(e)}), 500

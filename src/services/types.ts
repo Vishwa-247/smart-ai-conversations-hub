@@ -1,6 +1,5 @@
-
 // Base types for API communication
-export type ModelType = 'phi3:mini' | 'gemini-2.0-flash';
+export type ModelType = 'phi3:mini' | 'gemini-2.0-flash' | 'grok-2';
 
 export interface ChatRequest {
   model: ModelType;
