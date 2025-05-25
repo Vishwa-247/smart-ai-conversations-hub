@@ -25,7 +25,6 @@ export default function EmptyChat({
 }: EmptyChatProps) {
   const [input, setInput] = useState("");
   const [isSystemPromptMode, setIsSystemPromptMode] = useState(true);
-  const [showDocumentUpload, setShowDocumentUpload] = useState(false);
   const { toast } = useToast();
 
   const handleSend = () => {
@@ -100,13 +99,15 @@ export default function EmptyChat({
 
         {/* Document Upload Section */}
         <div className="w-full max-w-2xl">
-          <Button
-            onClick={() => setShowDocumentUpload(true)}
-            variant="outline"
-            className="w-full"
-          >
-            Upload Documents for Enhanced Responses
-          </Button>
+          <DocumentUpload 
+            onUploadSuccess={(filename, chunkCount) => {
+              toast({
+                title: "Document uploaded",
+                description: `${filename} is now available for AI queries`,
+                duration: 5000,
+              });
+            }}
+          />
         </div>
       </div>
 
@@ -162,21 +163,6 @@ export default function EmptyChat({
           )}
         </div>
       </div>
-
-      {/* Document Upload Modal */}
-      {showDocumentUpload && (
-        <DocumentUpload 
-          onClose={() => setShowDocumentUpload(false)}
-          onUploadSuccess={(filename, chunkCount) => {
-            toast({
-              title: "Document uploaded",
-              description: `${filename} is now available for AI queries`,
-              duration: 5000,
-            });
-            setShowDocumentUpload(false);
-          }}
-        />
-      )}
     </div>
   );
 }

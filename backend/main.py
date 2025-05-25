@@ -64,27 +64,20 @@ class DocumentUploadResponse(BaseModel):
 
 @app.get("/api/health")
 async def health_check():
-    print("🔍 Health check requested...")
     ollama_status = model_router.ollama_service.is_available()
-    print(f"📊 Ollama status: {ollama_status}")
-    
     return {
         "status": "ok", 
         "message": "Hybrid AI Agent API is running",
         "services": {
             "ollama": ollama_status,
             "rag": True,
-            "document_processor": True,
-            "mongodb": True
-        },
-        "timestamp": datetime.utcnow().isoformat()
+            "document_processor": True
+        }
     }
 
 @app.post("/api/upload-document", response_model=DocumentUploadResponse)
 async def upload_document(file: UploadFile = File(...)):
     try:
-        print(f"📁 Document upload started: {file.filename}")
-        
         # Read file content
         file_content = await file.read()
         
@@ -98,8 +91,6 @@ async def upload_document(file: UploadFile = File(...)):
             {"filename": file.filename, "upload_time": datetime.utcnow().isoformat()}
         )
         
-        print(f"✅ Document processed successfully: {file.filename} ({processed_doc['chunk_count']} chunks)")
-        
         return DocumentUploadResponse(
             success=True,
             message=f"Document {file.filename} processed successfully",
@@ -108,7 +99,6 @@ async def upload_document(file: UploadFile = File(...)):
         )
         
     except Exception as e:
-        print(f"❌ Document upload error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/chat", response_model=ChatResponse)
@@ -117,14 +107,6 @@ async def chat(request: MessageRequest):
     conversation_id = request.conversation_id
     system_prompt = request.system_prompt
     use_rag = request.use_rag
-    model = request.model
-    
-    print(f"🚀 Chat request received:")
-    print(f"   Model: {model}")
-    print(f"   Message: {message[:100]}...")
-    print(f"   Conversation ID: {conversation_id}")
-    print(f"   System Prompt: {'Yes' if system_prompt else 'No'}")
-    print(f"   Use RAG: {use_rag}")
     
     try:
         start_time = time.time()
@@ -134,27 +116,25 @@ async def chat(request: MessageRequest):
         citations = []
         
         if use_rag:
-            print("📚 Retrieving RAG context...")
             retrieved_chunks = rag_service.retrieve_relevant_chunks(message)
             citations = rag_service.get_citations(retrieved_chunks)
-            print(f"   Found {len(retrieved_chunks)} relevant chunks")
+        
+        # Determine the best model to use
+        model_selection = model_router.select_model(message, bool(retrieved_chunks))
         
         # Create conversation if it doesn't exist
         if not conversation_id:
-            print("🆕 Creating new conversation...")
             conversation_id = mongo_db.create_chat(
-                model=model, 
+                model=model_selection["model"], 
                 title=message[:30], 
                 system_prompt=system_prompt
             )
-            print(f"   Created conversation: {conversation_id}")
             
             conversations_cache[conversation_id] = [{
                 "role": "system",
                 "content": system_prompt or "You are a helpful AI assistant with access to uploaded documents."
             }]
         elif conversation_id not in conversations_cache:
-            print(f"📚 Loading conversation history: {conversation_id}")
             # Load conversation history
             messages_db = mongo_db.get_chat_history(conversation_id)
             chat_data = mongo_db.get_chat_by_id(conversation_id)
@@ -171,12 +151,10 @@ async def chat(request: MessageRequest):
                         "role": msg["role"],
                         "content": msg["content"]
                     })
-            print(f"   Loaded {len(messages_db)} messages from history")
         
         # Enhance message with RAG context if available
         enhanced_message = message
         if retrieved_chunks:
-            print("🔗 Enhancing message with RAG context...")
             enhanced_message = rag_service.generate_rag_prompt(message, retrieved_chunks)
         
         # Add user message to conversation
@@ -186,49 +164,35 @@ async def chat(request: MessageRequest):
         })
         
         # Save user message to database
-        print("💾 Saving user message to database...")
         mongo_db.save_message(conversation_id, "user", message)
         
         # Generate response using selected model
-        print(f"🤖 Generating response using {model}...")
-        response_text = ""
-        model_used = model
-        
+        success = True
         try:
-            if model == "phi3:mini":
-                print("🟠 Calling Ollama service...")
-                response_text = ask_ollama(conversations_cache[conversation_id], model)
-                model_used = "ollama (phi3:mini)"
-            elif model == "gemini-2.0-flash":
-                print("🟢 Calling Gemini service...")
+            if model_selection["service"] == "ollama":
+                response_text = ask_ollama(conversations_cache[conversation_id], model_selection["model"])
+            elif model_selection["service"] == "gemini":
                 response_text = ask_gemini(conversations_cache[conversation_id])
-                model_used = "gemini-2.0-flash"
-            elif model == "grok-2":
-                print("🟡 Calling Grok service...")
+            elif model_selection["service"] == "grok":
                 response_text = ask_grok(conversations_cache[conversation_id])
-                model_used = "grok-2"
             else:
-                print(f"⚠️ Unknown model {model}, defaulting to Gemini...")
-                response_text = ask_gemini(conversations_cache[conversation_id])
-                model_used = "gemini-2.0-flash (fallback)"
-                
-            print(f"✅ Response generated successfully ({len(response_text)} characters)")
-            
-        except Exception as model_error:
-            print(f"❌ Error with {model}: {str(model_error)}")
+                response_text = ask_openai(conversations_cache[conversation_id], "gpt-4o")
+        except Exception as e:
+            success = False
+            print(f"Error with {model_selection['service']}: {e}")
             # Fallback to Gemini
             try:
-                print("🔄 Attempting fallback to Gemini...")
                 response_text = ask_gemini(conversations_cache[conversation_id])
-                model_used = "gemini-2.0-flash (fallback)"
-                print("✅ Fallback successful")
+                model_selection["service"] = "gemini (fallback)"
+                success = True
             except Exception as fallback_error:
-                print(f"❌ Fallback failed: {str(fallback_error)}")
                 raise HTTPException(status_code=500, detail=f"All models failed: {str(fallback_error)}")
         
         end_time = time.time()
         response_time = end_time - start_time
-        print(f"⏱️ Total response time: {response_time:.2f} seconds")
+        
+        # Log performance
+        model_router.log_performance(model_selection, response_time, success)
         
         # Add assistant response to conversation
         conversations_cache[conversation_id].append({
@@ -237,84 +201,23 @@ async def chat(request: MessageRequest):
         })
         
         # Save assistant response to database
-        print("💾 Saving assistant response to database...")
         mongo_db.save_message(conversation_id, "assistant", response_text)
-        
-        print(f"🎉 Chat request completed successfully")
         
         return {
             "role": "assistant",
             "content": response_text,
             "conversation_id": conversation_id,
-            "model_used": model_used,
+            "model_used": f"{model_selection['service']} ({model_selection['model']})",
             "citations": citations if citations else None,
-            "reasoning": f"Processed in {response_time:.2f}s using {model_used}"
+            "reasoning": model_selection.get("reasoning")
         }
         
     except Exception as e:
-        print(f"💥 Chat error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/api/chats")
-async def get_chats():
-    try:
-        print("📚 Fetching all chats...")
-        chats = mongo_db.get_all_chats()
-        print(f"✅ Retrieved {len(chats)} chats")
-        return {"chats": chats}
-    except Exception as e:
-        print(f"❌ Error fetching chats: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/api/chats/{chat_id}")
-async def get_chat_history(chat_id: str, limit: int = 50):
-    try:
-        print(f"📖 Fetching chat history for {chat_id}...")
-        messages = mongo_db.get_chat_history(chat_id, limit)
-        print(f"✅ Retrieved {len(messages)} messages")
-        return {"messages": messages}
-    except Exception as e:
-        print(f"❌ Error fetching chat history: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.delete("/api/chats/{chat_id}")
-async def delete_chat(chat_id: str):
-    try:
-        print(f"🗑️ Deleting chat {chat_id}...")
-        success = mongo_db.delete_chat(chat_id)
-        if success and chat_id in conversations_cache:
-            del conversations_cache[chat_id]
-        print(f"✅ Chat deletion {'successful' if success else 'failed'}")
-        return {"success": success, "message": "Chat deleted successfully" if success else "Failed to delete chat"}
-    except Exception as e:
-        print(f"❌ Error deleting chat: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.patch("/api/chats/{chat_id}/system-prompt")
-async def update_system_prompt(chat_id: str, request: dict):
-    try:
-        system_prompt = request.get('system_prompt', '')
-        print(f"⚙️ Updating system prompt for {chat_id}: {system_prompt[:50]}...")
-        success = mongo_db.update_system_prompt(chat_id, system_prompt)
-        
-        if success and chat_id in conversations_cache:
-            system_idx = next((i for i, msg in enumerate(conversations_cache[chat_id]) 
-                             if msg["role"] == "system"), None)
-            if system_idx is not None:
-                conversations_cache[chat_id][system_idx]["content"] = system_prompt
-            else:
-                conversations_cache[chat_id].insert(0, {"role": "system", "content": system_prompt})
-        
-        print(f"✅ System prompt update {'successful' if success else 'failed'}")
-        return {"success": success, "message": "System prompt updated successfully" if success else "Failed to update system prompt"}
-    except Exception as e:
-        print(f"❌ Error updating system prompt: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/performance-stats")
 async def get_performance_stats():
     try:
-        print("📊 Fetching performance stats...")
         stats = model_router.get_performance_stats()
         system_resources = model_router.get_system_resources()
         
@@ -325,5 +228,49 @@ async def get_performance_stats():
             "installed_models": model_router.ollama_service.get_installed_models()
         }
     except Exception as e:
-        print(f"❌ Error fetching performance stats: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ... keep existing code (other endpoints like get_chats, delete_chat, etc.)
+@app.get("/api/chats")
+async def get_chats():
+    try:
+        chats = mongo_db.get_all_chats()
+        return {"chats": chats}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/chats/{chat_id}")
+async def get_chat_history(chat_id: str, limit: int = 50):
+    try:
+        messages = mongo_db.get_chat_history(chat_id, limit)
+        return {"messages": messages}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/chats/{chat_id}")
+async def delete_chat(chat_id: str):
+    try:
+        success = mongo_db.delete_chat(chat_id)
+        if success and chat_id in conversations_cache:
+            del conversations_cache[chat_id]
+        return {"success": success, "message": "Chat deleted successfully" if success else "Failed to delete chat"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.patch("/api/chats/{chat_id}/system-prompt")
+async def update_system_prompt(chat_id: str, request: dict):
+    try:
+        system_prompt = request.get('system_prompt', '')
+        success = mongo_db.update_system_prompt(chat_id, system_prompt)
+        
+        if success and chat_id in conversations_cache:
+            system_idx = next((i for i, msg in enumerate(conversations_cache[chat_id]) 
+                             if msg["role"] == "system"), None)
+            if system_idx is not None:
+                conversations_cache[chat_id][system_idx]["content"] = system_prompt
+            else:
+                conversations_cache[chat_id].insert(0, {"role": "system", "content": system_prompt})
+        
+        return {"success": success, "message": "System prompt updated successfully" if success else "Failed to update system prompt"}
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
