@@ -28,6 +28,14 @@ const models: ModelOption[] = [
       <path d="M2 17L12 22L22 17" />
       <path d="M2 12L12 17L22 12" />
     </svg>
+  },
+  {
+    value: "gemini-2.0-flash",
+    label: "Gemini 2.0 Flash",
+    description: "Google's latest Gemini model",
+    icon: <svg viewBox="0 0 24 24" className="h-5 w-5 text-blue-500" fill="currentColor">
+      <path d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z" />
+    </svg>
   }
 ];
 

@@ -1,6 +1,6 @@
-
 import { apiClient } from './apiClient';
 import { ChatRequest, ChatResponse, Chat, ChatsResponse, ChatHistoryResponse, ChatMessage, ModelType } from './types';
+import { callGeminiAPI } from './geminiService';
 
 // Send a chat message to the backend
 export const sendChatMessage = async (request: ChatRequest): Promise<ChatResponse> => {
@@ -100,19 +100,43 @@ export const sendMessage = async (
   systemPrompt?: string,
   files?: File[]
 ): Promise<{ role: 'assistant', content: string, conversation_id?: string }> => {
+  
+  // Handle Gemini model directly
+  if (model === 'gemini-2.0-flash') {
+    try {
+      const messages = [];
+      
+      if (systemPrompt) {
+        messages.push({ role: 'system' as const, content: systemPrompt });
+      }
+      
+      messages.push({ role: 'user' as const, content: message });
+      
+      const response = await callGeminiAPI(messages);
+      
+      return {
+        role: 'assistant',
+        content: response,
+        conversation_id: chatId || `gemini_${Date.now()}`
+      };
+    } catch (error) {
+      console.error('Gemini API error:', error);
+      throw new Error('Failed to get response from Gemini');
+    }
+  }
+
+  // For other models, use the existing backend API
   const request: ChatRequest = {
     model,
     message,
     conversation_id: chatId || undefined,
-    use_rag: true, // Always enable RAG for document-enhanced responses
+    use_rag: true,
   };
 
-  // Add system prompt if provided
   if (systemPrompt) {
     request.system_prompt = systemPrompt;
   }
   
-  // Add files if provided
   if (files && files.length > 0) {
     request.files = files;
   }

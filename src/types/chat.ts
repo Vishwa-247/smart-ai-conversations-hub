@@ -1,5 +1,4 @@
-
-export type ModelType = 'phi3:mini';
+export type ModelType = 'phi3:mini' | 'gemini-2.0-flash';
 
 export interface Message {
   id: string;
