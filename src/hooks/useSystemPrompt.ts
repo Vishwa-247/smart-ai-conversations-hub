@@ -13,19 +13,23 @@ export function useSystemPrompt() {
   }, []);
 
   const saveSystemPrompt = useCallback(async (chatId: string, promptValue: string) => {
-    if (!chatId) return false;
+    if (!chatId) return;
 
     setIsLoading(true);
     try {
-      await apiService.updateSystemPrompt(chatId, promptValue);
+      const success = await apiService.updateSystemPrompt(chatId, promptValue);
       
-      toast({
-        title: "System prompt updated",
-        description: "Your custom instructions have been saved",
-        duration: 3000,
-      });
-      setIsEditing(false);
-      return true;
+      if (success) {
+        toast({
+          title: "System prompt updated",
+          description: "Your custom instructions have been saved",
+          duration: 3000,
+        });
+        setIsEditing(false);
+        return true;
+      } else {
+        throw new Error("Server returned false for success");
+      }
     } catch (error) {
       console.error("Failed to update system prompt:", error);
       toast({
