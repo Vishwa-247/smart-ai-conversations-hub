@@ -25,25 +25,7 @@ export default function Chat() {
     getSystemPrompt
   } = useChatActions();
   
-  // Show loading skeleton while initial data loads
-  if (isInitialLoading) {
-    return (
-      <div className="flex h-screen flex-col">
-        <div className="border-b p-4">
-          <Skeleton className="h-8 w-32" />
-        </div>
-        <div className="flex-1 p-4 space-y-4">
-          <Skeleton className="h-4 w-3/4" />
-          <Skeleton className="h-4 w-1/2" />
-          <Skeleton className="h-4 w-2/3" />
-        </div>
-        <div className="border-t p-4">
-          <Skeleton className="h-20 w-full" />
-        </div>
-      </div>
-    );
-  }
-  
+  // Move ALL hooks to the top level - before any conditional returns
   // Show system prompt input when starting a new chat
   useEffect(() => {
     if (!currentChatId || (currentChat && currentChat.messages.length === 0)) {
@@ -71,6 +53,26 @@ export default function Chat() {
     
     handleSendMessage(content, files);
   };
+  
+  // Now handle conditional rendering AFTER all hooks are called
+  // Show loading skeleton while initial data loads
+  if (isInitialLoading) {
+    return (
+      <div className="flex h-screen flex-col">
+        <div className="border-b p-4">
+          <Skeleton className="h-8 w-32" />
+        </div>
+        <div className="flex-1 p-4 space-y-4">
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-4 w-1/2" />
+          <Skeleton className="h-4 w-2/3" />
+        </div>
+        <div className="border-t p-4">
+          <Skeleton className="h-20 w-full" />
+        </div>
+      </div>
+    );
+  }
   
   if (!currentChatId) {
     return (
