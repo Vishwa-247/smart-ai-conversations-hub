@@ -1,13 +1,11 @@
-// Base types for API communication
-export type ModelType = 'phi3:mini' | 'gemini-2.0-flash' | 'grok-2';
+
+export type ModelType = 'phi3:mini' | 'gemini-2.0-flash' | 'groq-llama';
 
 export interface ChatRequest {
   model: ModelType;
   message: string;
   conversation_id?: string;
   system_prompt?: string;
-  use_rag?: boolean;
-  files?: File[];
 }
 
 export interface ChatResponse {
@@ -15,16 +13,6 @@ export interface ChatResponse {
   content: string;
   conversation_id: string;
   model_used?: string;
-  citations?: Citation[];
-  reasoning?: string;
-  response: string; // Alias for content to match backend
-}
-
-export interface Citation {
-  source: string;
-  filename: string;
-  chunk_index: number;
-  similarity: number;
 }
 
 export interface Chat {
@@ -51,9 +39,4 @@ export interface ChatMessage {
 
 export interface ChatHistoryResponse {
   messages: ChatMessage[];
-}
-
-export interface CustomModel {
-  name: string;
-  displayName: string;
 }

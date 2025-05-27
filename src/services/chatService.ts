@@ -1,62 +1,25 @@
 
 import { apiClient } from './apiClient';
 import { ChatRequest, ChatResponse, Chat, ChatsResponse, ChatHistoryResponse, ChatMessage, ModelType } from './types';
-import { callGeminiAPI } from './geminiService';
 
 const API_TIMEOUT = 30000;
 
-const createTimeoutPromise = (timeout: number) => {
-  return new Promise((_, reject) => {
-    setTimeout(() => reject(new Error('Request timeout')), timeout);
-  });
-};
-
 export const sendChatMessage = async (request: ChatRequest): Promise<ChatResponse> => {
   try {
-    console.log('📨 Sending chat request:', {
-      model: request.model,
-      messageLength: request.message.length,
-      conversationId: request.conversation_id,
-      hasSystemPrompt: !!request.system_prompt,
-      useRag: request.use_rag,
-      filesCount: request.files?.length || 0
+    console.log('📨 Sending chat request:', request);
+    
+    const response = await apiClient.post<ChatResponse>('/chat', request, {
+      timeout: API_TIMEOUT
     });
     
-    if (request.files && request.files.length > 0) {
-      console.log(`📎 Preparing to upload ${request.files.length} files`);
-    }
-    
-    const startTime = Date.now();
-    const responsePromise = apiClient.post<ChatResponse>('/chat', request);
-    const timeoutPromise = createTimeoutPromise(API_TIMEOUT);
-    
-    const response = await Promise.race([responsePromise, timeoutPromise]) as any;
-    const endTime = Date.now();
-    
-    console.log(`✅ Response received in ${endTime - startTime}ms:`, {
-      model: request.model,
-      responseLength: response.data.content?.length || 0,
-      conversationId: response.data.conversation_id
-    });
-    
-    if (response.data.content && !response.data.response) {
-      response.data.response = response.data.content;
-    }
-    
+    console.log('✅ Response received:', response.data);
     return response.data;
   } catch (error: any) {
     console.error('❌ Error in sendChatMessage:', error);
-    if (error.message === 'Request timeout') {
-      throw new Error(`Request timed out for ${request.model}. The model might be taking longer than usual to respond.`);
-    }
-    if (error.response?.data?.detail) {
-      throw new Error(error.response.data.detail);
-    }
-    throw new Error(error.message || 'Failed to connect to the server');
+    throw new Error(error.response?.data?.detail || 'Failed to send message');
   }
 };
 
-// Get all chats for the current user
 export const getChats = async (): Promise<Chat[]> => {
   try {
     console.log('📚 Fetching chats from backend...');
@@ -65,10 +28,7 @@ export const getChats = async (): Promise<Chat[]> => {
     return response.data.chats || [];
   } catch (error: any) {
     console.error('❌ Error in getChats:', error);
-    if (error.response?.data?.detail) {
-      throw new Error(error.response.data.detail);
-    }
-    throw new Error(error.message || 'Failed to fetch chats');
+    throw new Error(error.response?.data?.detail || 'Failed to fetch chats');
   }
 };
 
@@ -80,10 +40,7 @@ export const getChatHistory = async (chatId: string, limit = 50): Promise<ChatMe
     return response.data.messages || [];
   } catch (error: any) {
     console.error('❌ Error in getChatHistory:', error);
-    if (error.response?.data?.detail) {
-      throw new Error(error.response.data.detail);
-    }
-    throw new Error(error.message || 'Failed to fetch chat history');
+    throw new Error(error.response?.data?.detail || 'Failed to fetch chat history');
   }
 };
 
@@ -95,16 +52,13 @@ export const deleteChat = async (chatId: string): Promise<boolean> => {
     return response.data.success;
   } catch (error: any) {
     console.error("❌ Error deleting chat:", error);
-    if (error.response?.data?.detail) {
-      throw new Error(error.response.data.detail);
-    }
-    throw new Error(error.message || 'Failed to delete chat');
+    throw new Error(error.response?.data?.detail || 'Failed to delete chat');
   }
 };
 
 export const updateSystemPrompt = async (chatId: string, systemPrompt: string): Promise<boolean> => {
   try {
-    console.log(`⚙️ Updating system prompt for ${chatId}:`, systemPrompt.slice(0, 100) + '...');
+    console.log(`⚙️ Updating system prompt for ${chatId}`);
     const response = await apiClient.patch(`/chats/${chatId}/system-prompt`, {
       system_prompt: systemPrompt
     });
@@ -112,10 +66,7 @@ export const updateSystemPrompt = async (chatId: string, systemPrompt: string): 
     return response.data.success;
   } catch (error: any) {
     console.error("❌ Error updating system prompt:", error);
-    if (error.response?.data?.detail) {
-      throw new Error(error.response.data.detail);
-    }
-    throw new Error(error.message || 'Failed to update system prompt');
+    throw new Error(error.response?.data?.detail || 'Failed to update system prompt');
   }
 };
 
@@ -134,57 +85,18 @@ export const sendMessage = async (
     filesCount: files?.length || 0
   });
   
-  if (model === 'gemini-2.0-flash') {
-    try {
-      const messages = [];
-      
-      if (systemPrompt) {
-        messages.push({ role: 'system' as const, content: systemPrompt });
-      }
-      
-      messages.push({ role: 'user' as const, content: message });
-      
-      console.log('🟢 Calling Gemini API directly...');
-      const geminiPromise = callGeminiAPI(messages);
-      const timeoutPromise = createTimeoutPromise(API_TIMEOUT);
-      
-      const response = await Promise.race([geminiPromise, timeoutPromise]) as string;
-      console.log('✅ Gemini response received');
-      
-      return {
-        role: 'assistant',
-        content: response,
-        conversation_id: chatId || `gemini_${Date.now()}`
-      };
-    } catch (error: any) {
-      console.error('❌ Gemini API error:', error);
-      if (error.message === 'Request timeout') {
-        throw new Error('Gemini API timed out. Please try again.');
-      }
-      throw new Error('Failed to get response from Gemini');
-    }
-  }
-
   const request: ChatRequest = {
     model,
     message,
     conversation_id: chatId || undefined,
-    use_rag: true,
+    system_prompt: systemPrompt,
   };
-
-  if (systemPrompt) {
-    request.system_prompt = systemPrompt;
-  }
-  
-  if (files && files.length > 0) {
-    request.files = files;
-  }
 
   const response = await sendChatMessage(request);
   
   return {
     role: 'assistant',
-    content: response.response || response.content,
+    content: response.content,
     conversation_id: response.conversation_id
   };
 };

@@ -1,5 +1,5 @@
 
-export type ModelType = 'phi3:mini' | 'gemini-2.0-flash' | 'grok-2';
+export type ModelType = 'phi3:mini' | 'gemini-2.0-flash' | 'groq-llama';
 
 export interface Message {
   id: string;
@@ -7,14 +7,6 @@ export interface Message {
   content: string;
   timestamp: Date;
   model?: string;
-  citations?: Citation[];
-}
-
-export interface Citation {
-  source: string;
-  filename: string;
-  chunk_index: number;
-  similarity: number;
 }
 
 export interface Chat {
