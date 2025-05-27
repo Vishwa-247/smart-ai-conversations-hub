@@ -10,9 +10,9 @@ import json
 
 # Import services
 from services.gemini_service import ask_gemini
-from services.groq_service import ask_groq  # Fixed from grok to groq
+from services.groq_service import ask_groq
 from services.ollama_service import ask_ollama
-from services.langchain_rag import LangChainRAG
+from services.simple_rag import SimpleRAG
 
 # Import MongoDB client
 from database.mongodb import MongoDB
@@ -30,7 +30,7 @@ app.add_middleware(
 
 # Initialize services
 mongo_db = MongoDB()
-langchain_rag = LangChainRAG()
+simple_rag = SimpleRAG()
 conversations_cache = {}
 
 # Define request and response models
@@ -55,8 +55,8 @@ async def upload_document(file: UploadFile = File(...)):
     try:
         file_content = await file.read()
         
-        # Process document with LangChain
-        result = langchain_rag.process_document(file_content, file.filename)
+        # Process document with Simple RAG
+        result = simple_rag.process_document(file_content, file.filename)
         
         return {
             "success": True,
@@ -108,8 +108,8 @@ async def chat(request: MessageRequest):
         
         # Check if we have relevant documents
         enhanced_message = message
-        if langchain_rag.has_documents():
-            enhanced_message = langchain_rag.query_documents(message)
+        if simple_rag.has_documents():
+            enhanced_message = simple_rag.simple_search(message)
         
         # Add user message to conversation
         conversations_cache[conversation_id].append({
@@ -123,7 +123,7 @@ async def chat(request: MessageRequest):
         # Generate response based on model
         if model == 'gemini-2.0-flash':
             response_text = ask_gemini(conversations_cache[conversation_id])
-        elif model == 'groq-llama':  # Fixed from grok to groq
+        elif model == 'groq-llama':
             response_text = ask_groq(conversations_cache[conversation_id])
         elif model == 'phi3:mini':
             response_text = ask_ollama(conversations_cache[conversation_id], model)
@@ -196,7 +196,7 @@ async def update_system_prompt(chat_id: str, request: dict):
 @app.get("/api/documents")
 async def get_uploaded_documents():
     try:
-        documents = langchain_rag.get_document_list()
+        documents = simple_rag.get_document_list()
         return {"documents": documents}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

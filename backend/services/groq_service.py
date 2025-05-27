@@ -36,7 +36,7 @@ def ask_groq(messages):
         
         payload = {
             "messages": formatted_messages,
-            "model": "llama-3.1-70b-versatile",
+            "model": "meta-llama/llama-3.1-70b-versatile",
             "temperature": 0.7,
             "max_tokens": 1024,
             "stream": False
