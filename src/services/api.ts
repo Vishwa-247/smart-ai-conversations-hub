@@ -9,7 +9,7 @@ import {
   sendMessage,
   updateSystemPrompt,
 } from './chatService';
-import { ModelType, ChatMessage, CustomModel } from './types';
+import { ModelType, ChatMessage } from './types';
 
 // Export API functions as a service object
 export const apiService = {
@@ -32,4 +32,4 @@ export {
 };
 
 // Re-export types
-export type { ModelType, ChatMessage, CustomModel };
+export type { ModelType, ChatMessage };
