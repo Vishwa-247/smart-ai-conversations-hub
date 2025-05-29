@@ -1,13 +1,16 @@
-
 import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/contexts/SidebarContext";
 import { Menu, Settings } from "lucide-react";
 import ThemeSelector from "./ThemeSelector";
 import { useChat } from "@/contexts/ChatContext";
+import SystemVariablesDialog from "./SystemVariablesDialog";
+import DocumentViewer from "./DocumentViewer";
+import { useChatActions } from "@/hooks/useChatActions";
 
 export default function ChatHeader() {
   const { toggle } = useSidebar();
   const { currentChatId, chats } = useChat();
+  const { systemPrompt, setSystemPrompt, handleSaveSystemPrompt } = useChatActions();
   
   // Find current chat title
   const currentChat = chats.find((chat) => chat.id === currentChatId);
@@ -24,6 +27,17 @@ export default function ChatHeader() {
         </h1>
       </div>
       <div className="flex items-center gap-2">
+        <DocumentViewer />
+        {currentChatId && (
+          <SystemVariablesDialog
+            systemPrompt={systemPrompt}
+            onSave={(prompt) => {
+              setSystemPrompt(prompt);
+              handleSaveSystemPrompt();
+            }}
+            chatId={currentChatId}
+          />
+        )}
         <ThemeSelector />
         <Button variant="ghost" size="icon">
           <Settings className="h-5 w-5" />

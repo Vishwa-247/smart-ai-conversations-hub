@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Send, Plus, FileAudio, FileImage, File } from "lucide-react";
@@ -11,6 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import FilePreview from "./FilePreview";
 
 interface ChatInputProps {
   onSend: (message: string, files?: File[]) => void;
@@ -111,35 +111,33 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
     if (files.length === 0) return null;
     
     return (
-      <div className="mt-2 flex flex-wrap gap-2">
-        {files.map((file, index) => (
-          <div 
-            key={index} 
-            className="flex items-center bg-muted/20 rounded-md px-2 py-1 text-xs"
-          >
-            {file.type.startsWith('image/') && <FileImage className="h-3 w-3 mr-1" />}
-            {file.type.startsWith('audio/') && <FileAudio className="h-3 w-3 mr-1" />}
-            {(!file.type.startsWith('image/') && !file.type.startsWith('audio/')) && <File className="h-3 w-3 mr-1" />}
-            <span className="truncate max-w-[150px]">{file.name}</span>
+      <div className="mt-2 space-y-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          {files.map((file, index) => (
+            <FilePreview
+              key={index}
+              file={file}
+              onRemove={() => setFiles(files.filter((_, i) => i !== index))}
+              onView={() => {
+                // Create a temporary URL for viewing
+                const url = URL.createObjectURL(file);
+                window.open(url, '_blank');
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+              }}
+            />
+          ))}
+        </div>
+        {files.length > 0 && (
+          <div className="flex justify-end">
             <Button 
               variant="ghost" 
               size="sm" 
-              className="h-4 w-4 p-0 ml-1" 
-              onClick={() => setFiles(files.filter((_, i) => i !== index))}
+              className="text-xs h-6" 
+              onClick={() => setFiles([])}
             >
-              ×
+              Clear all files
             </Button>
           </div>
-        ))}
-        {files.length > 0 && (
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="text-xs h-6" 
-            onClick={() => setFiles([])}
-          >
-            Clear all
-          </Button>
         )}
       </div>
     );
