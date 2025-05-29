@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Send, Plus, FileAudio, FileImage, File } from "lucide-react";
 import { FormEvent, useState, useRef } from "react";
+import { useToast } from "@/components/ui/use-toast";
+import { apiClient } from "@/services/apiClient";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -18,7 +20,9 @@ interface ChatInputProps {
 export default function ChatInput({ onSend, disabled = false }: ChatInputProps) {
   const [input, setInput] = useState("");
   const [files, setFiles] = useState<File[]>([]);
+  const [uploadingDocument, setUploadingDocument] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -36,11 +40,64 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
     }
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const selectedFiles = Array.from(e.target.files);
-      setFiles(prevFiles => [...prevFiles, ...selectedFiles]);
+      
+      // Check if any files are documents that should be processed for RAG
+      const documentFiles = selectedFiles.filter(file => {
+        const extension = '.' + file.name.split('.').pop()?.toLowerCase();
+        return ['.pdf', '.docx', '.txt', '.md'].includes(extension);
+      });
+      
+      const otherFiles = selectedFiles.filter(file => {
+        const extension = '.' + file.name.split('.').pop()?.toLowerCase();
+        return !['.pdf', '.docx', '.txt', '.md'].includes(extension);
+      });
+      
+      // Process document files for RAG
+      if (documentFiles.length > 0) {
+        setUploadingDocument(true);
+        
+        for (const file of documentFiles) {
+          try {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const response = await apiClient.post('/upload-document', formData, {
+              headers: {
+                'Content-Type': 'multipart/form-data',
+              },
+            });
+
+            const { filename, chunk_count } = response.data;
+            
+            toast({
+              title: "Document processed for AI context",
+              description: `${filename} has been processed into ${chunk_count} chunks and will enhance AI responses.`,
+            });
+
+          } catch (error: any) {
+            console.error('Document upload error:', error);
+            toast({
+              title: "Document processing failed",
+              description: error.response?.data?.detail || `Failed to process ${file.name}`,
+              variant: "destructive",
+            });
+          }
+        }
+        
+        setUploadingDocument(false);
+      }
+      
+      // Add other files (images, audio) to the chat
+      if (otherFiles.length > 0) {
+        setFiles(prevFiles => [...prevFiles, ...otherFiles]);
+      }
     }
+    
+    // Reset the input
+    e.target.value = '';
   };
 
   const triggerFileInput = (accept: string) => {
@@ -108,7 +165,7 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            disabled={disabled}
+            disabled={disabled || uploadingDocument}
             rows={1}
           />
           
@@ -119,7 +176,7 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
                   size="icon"
                   variant="ghost"
                   className="h-9 w-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
-                  disabled={disabled}
+                  disabled={disabled || uploadingDocument}
                 >
                   <Plus className="h-5 w-5" />
                   <span className="sr-only">Add files</span>
@@ -134,7 +191,7 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
                   <FileAudio className="h-4 w-4 mr-2" />
                   <span>Audio</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => triggerFileInput('*')}>
+                <DropdownMenuItem onClick={() => triggerFileInput('.pdf,.docx,.txt,.md,*')}>
                   <File className="h-4 w-4 mr-2" />
                   <span>Document</span>
                 </DropdownMenuItem>
@@ -144,7 +201,7 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
             <Button
               size="icon"
               type="submit"
-              disabled={input.trim() === '' && files.length === 0 || disabled}
+              disabled={input.trim() === '' && files.length === 0 || disabled || uploadingDocument}
               className="h-9 w-9 rounded-lg bg-primary hover:bg-primary/90 transition-all"
             >
               <Send className="h-4 w-4" />
@@ -154,7 +211,7 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
         </div>
       </div>
       <div className="text-xs text-center mt-2 text-muted-foreground">
-        Press Enter to send
+        {uploadingDocument ? "Processing document for AI context..." : "Press Enter to send"}
       </div>
     </form>
   );

@@ -1,15 +1,14 @@
 
 import { useState } from "react";
-import { Send, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/components/ui/use-toast";
-import DocumentUpload from "@/components/DocumentUpload";
+import { Card, CardContent } from "@/components/ui/card";
+import { Send, Sparkles } from "lucide-react";
 
 interface EmptyChatProps {
   systemPrompt: string;
   setSystemPrompt: (prompt: string) => void;
-  onSendMessage: (content: string, files?: File[]) => void;
+  onSendMessage: (message: string) => void;
   isLoading: boolean;
   showSystemPrompt: boolean;
   isRequired: boolean;
@@ -23,145 +22,111 @@ export default function EmptyChat({
   showSystemPrompt,
   isRequired
 }: EmptyChatProps) {
-  const [input, setInput] = useState("");
-  const [isSystemPromptMode, setIsSystemPromptMode] = useState(true);
-  const { toast } = useToast();
+  const [message, setMessage] = useState("");
 
-  const handleSend = () => {
-    if (!input.trim()) return;
-
-    if (isSystemPromptMode && showSystemPrompt) {
-      // First message: set as system prompt
-      setSystemPrompt(input.trim());
-      setIsSystemPromptMode(false);
-      setInput("");
-      toast({
-        title: "System prompt set",
-        description: "Now you can start chatting with your custom instructions",
-        duration: 3000,
-      });
-    } else {
-      // Regular message
-      onSendMessage(input.trim());
-      setInput("");
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (message.trim() && !isLoading) {
+      onSendMessage(message);
+      setMessage("");
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSend();
+      handleSubmit(e);
     }
   };
 
-  const currentMode = isSystemPromptMode && showSystemPrompt;
+  const examplePrompts = [
+    "Explain quantum computing in simple terms",
+    "Write a short story about a time traveler",
+    "Help me plan a healthy meal for the week",
+    "What are the latest trends in web development?"
+  ];
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex-1 flex flex-col items-center justify-center p-8 space-y-8">
-        <div className="text-center space-y-4 max-w-2xl">
-          <div className="flex items-center justify-center space-x-2 mb-4">
-            <Sparkles className="h-8 w-8 text-primary" />
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-              AI Chat Assistant
-            </h1>
-          </div>
-          
-          {currentMode ? (
-            <div className="space-y-4">
-              <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                <div className="flex items-center space-x-2 mb-2">
-                  <Sparkles className="h-5 w-5 text-blue-500" />
-                  <h3 className="font-semibold text-blue-700 dark:text-blue-300">
-                    Set System Instructions (Optional)
-                  </h3>
-                </div>
-                <p className="text-sm text-blue-600 dark:text-blue-400">
-                  Your first message will set the AI's behavior and personality for this entire conversation.
-                  You can also skip this and start chatting directly.
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <p className="text-lg text-muted-foreground">
-                Ready to chat! Your system instructions are set.
-              </p>
-              {systemPrompt && (
-                <div className="bg-muted/50 rounded-lg p-3 text-sm">
-                  <strong>Current instructions:</strong> {systemPrompt.slice(0, 100)}
-                  {systemPrompt.length > 100 && "..."}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Document Upload Section */}
-        <div className="w-full max-w-2xl">
-          <DocumentUpload 
-            onUploadSuccess={(filename, chunkCount) => {
-              toast({
-                title: "Document uploaded",
-                description: `${filename} is now available for AI queries`,
-                duration: 5000,
-              });
-            }}
-          />
+    <div className="flex h-screen flex-col">
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b border-border/30">
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-6 w-6 text-primary" />
+          <h1 className="text-xl font-semibold">AI Assistant</h1>
         </div>
       </div>
 
-      {/* Chat Input */}
-      <div className="border-t p-4">
-        <div className="max-w-4xl mx-auto">
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col items-center justify-center p-8 space-y-8">
+        <div className="text-center space-y-4 max-w-2xl">
+          <h2 className="text-3xl font-bold text-foreground">
+            Welcome to AI Assistant
+          </h2>
+          <p className="text-lg text-muted-foreground">
+            Start a conversation, upload documents for context, or choose from these examples:
+          </p>
+        </div>
+
+        {/* System Prompt Section */}
+        {showSystemPrompt && (
+          <Card className="w-full max-w-2xl">
+            <CardContent className="p-6">
+              <h3 className="text-lg font-semibold mb-3">
+                System Instructions {isRequired && <span className="text-destructive">*</span>}
+              </h3>
+              <Textarea
+                placeholder="Enter system instructions to customize AI behavior..."
+                value={systemPrompt}
+                onChange={(e) => setSystemPrompt(e.target.value)}
+                className="min-h-[100px] resize-none"
+              />
+              <p className="text-sm text-muted-foreground mt-2">
+                Set custom instructions to guide how the AI responds to your messages.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Example Prompts */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-4xl">
+          {examplePrompts.map((prompt, index) => (
+            <Card 
+              key={index} 
+              className="cursor-pointer hover:bg-muted/50 transition-colors"
+              onClick={() => setMessage(prompt)}
+            >
+              <CardContent className="p-4">
+                <p className="text-sm">{prompt}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Chat Input */}
+        <form onSubmit={handleSubmit} className="w-full max-w-3xl">
           <div className="relative">
             <Textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder={
-                currentMode
-                  ? "Set system instructions (e.g., 'You are a helpful coding assistant..') or start chatting directly"
-                  : "Type your message..."
-              }
-              className={`pr-12 min-h-[80px] resize-none ${
-                currentMode ? "border-blue-300 focus:border-blue-500" : ""
-              }`}
+              placeholder="Type your message here..."
+              className="resize-none pr-12 min-h-[60px] max-h-[200px] rounded-xl border border-foreground/20 shadow-sm"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyDown={handleKeyDown}
               disabled={isLoading}
+              rows={1}
             />
             <Button
-              onClick={handleSend}
-              disabled={!input.trim() || isLoading}
               size="icon"
-              className="absolute bottom-2 right-2 h-8 w-8"
+              type="submit"
+              disabled={!message.trim() || isLoading}
+              className="absolute right-2 bottom-2 h-8 w-8 rounded-lg"
             >
               <Send className="h-4 w-4" />
             </Button>
           </div>
-          
-          {currentMode && (
-            <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-              <span>
-                💡 Tip: System instructions shape how the AI responds throughout the conversation
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setIsSystemPromptMode(false);
-                  toast({
-                    title: "Skipped system prompt",
-                    description: "You can set instructions later in chat settings",
-                    duration: 3000,
-                  });
-                }}
-                className="text-xs h-6"
-              >
-                Skip & Chat
-              </Button>
-            </div>
-          )}
-        </div>
+          <p className="text-xs text-center mt-2 text-muted-foreground">
+            Press Enter to send • Upload documents via the chat input for enhanced context
+          </p>
+        </form>
       </div>
     </div>
   );
