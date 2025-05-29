@@ -48,7 +48,7 @@ const models: ModelOption[] = [
 ];
 
 export default function ModelSelector() {
-  const { currentModel, setCurrentModel, createChat } = useChat();
+  const { currentModel, setCurrentModel } = useChat();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -65,7 +65,7 @@ export default function ModelSelector() {
   const handleSelectModel = (model: ModelType) => {
     if (model !== currentModel) {
       setCurrentModel(model);
-      createChat(model);
+      // Don't create a new chat when switching models
     }
     setOpen(false);
   };

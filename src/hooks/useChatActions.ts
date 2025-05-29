@@ -25,6 +25,16 @@ export function useChatActions() {
   // Get current chat
   const currentChat = chats.find((chat) => chat.id === currentChatId);
   
+  // Update system prompt from current chat when chat changes
+  useState(() => {
+    if (currentChatId) {
+      const chatSystemPrompt = getSystemPrompt(currentChatId);
+      if (chatSystemPrompt) {
+        setSystemPrompt(chatSystemPrompt);
+      }
+    }
+  });
+  
   // Handle saving system prompt
   const handleSaveSystemPrompt = useCallback(async () => {
     if (currentChatId) {
@@ -50,9 +60,9 @@ export function useChatActions() {
   const handleSendMessage = useCallback(async (content: string, files?: File[]) => {
     if (!content.trim()) return;
     
-    // If system prompt is being shown, this is a new chat
+    // Check if this is a new chat scenario
     const isNewChat = !currentChatId || (currentChat && currentChat.messages.length === 0);
-    const systemPromptToUse = showSystemPrompt ? systemPrompt : undefined;
+    const systemPromptToUse = showSystemPrompt ? systemPrompt : (currentChat?.systemPrompt || "");
     
     // Add user message
     const userMessage = {
@@ -77,7 +87,7 @@ export function useChatActions() {
         currentChatId || "",
         content,
         currentModel,
-        systemPromptToUse || currentChat?.systemPrompt,
+        systemPromptToUse,
         files
       );
       
