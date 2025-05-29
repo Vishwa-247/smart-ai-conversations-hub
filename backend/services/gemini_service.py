@@ -10,8 +10,8 @@ load_dotenv()
 # API key from environment variables
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-# Use the correct model name
-GEMINI_MODEL = "gemini-pro"
+# Use the correct model name for Gemini 2.0 Flash
+GEMINI_MODEL = "gemini-2.0-flash-exp"
 
 # Configure the Gemini API
 def ask_gemini(messages):

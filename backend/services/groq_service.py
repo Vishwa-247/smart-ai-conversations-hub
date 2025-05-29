@@ -43,6 +43,7 @@ def ask_groq(messages):
         }
         
         print(f"🟡 Sending request to GROQ API with {len(formatted_messages)} messages")
+        print(f"🟡 Using API key: {GROQ_API_KEY[:5]}...{GROQ_API_KEY[-5:] if GROQ_API_KEY else 'None'}")
         start_time = time.time()
         
         response = requests.post(
