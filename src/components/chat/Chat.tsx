@@ -7,6 +7,7 @@ import ChatMessageList from "./ChatMessageList";
 import EmptyChat from "./EmptyChat";
 import { useChat } from "@/contexts/ChatContext";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Loader2 } from "lucide-react";
 
 export default function Chat() {
   const { isInitialLoading } = useChat();
@@ -25,7 +26,6 @@ export default function Chat() {
     getSystemPrompt
   } = useChatActions();
   
-  // Move ALL hooks to the top level - before any conditional returns
   // Show system prompt input when starting a new chat
   useEffect(() => {
     if (!currentChatId || (currentChat && currentChat.messages.length === 0)) {
@@ -54,7 +54,6 @@ export default function Chat() {
     handleSendMessage(content, files);
   };
   
-  // Now handle conditional rendering AFTER all hooks are called
   // Show loading skeleton while initial data loads
   if (isInitialLoading) {
     return (
@@ -91,7 +90,16 @@ export default function Chat() {
     <div className="flex h-screen flex-col">
       <ChatHeader />
       
-      <div className="flex-1 overflow-y-auto custom-scrollbar">
+      <div className="flex-1 overflow-y-auto custom-scrollbar relative">
+        {isLoading && (
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+            <div className="flex items-center gap-2 bg-background border rounded-lg p-4 shadow-lg">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span className="text-sm">Generating response...</span>
+            </div>
+          </div>
+        )}
+        
         <ChatMessageList
           messages={currentChat?.messages || []}
           systemPrompt={systemPrompt}

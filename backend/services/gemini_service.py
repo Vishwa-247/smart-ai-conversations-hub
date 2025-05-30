@@ -7,11 +7,11 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-# API key from environment variables
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+# API key from environment variables with new key as fallback
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyC0sKQhg3sqDJXQUxK8_om4FfQY1884NXM")
 
 # Use the correct model name for Gemini 2.0 Flash
-GEMINI_MODEL = "gemini-2.0-flash-exp"
+GEMINI_MODEL = "gemini-2.0-flash"
 
 # Configure the Gemini API
 def ask_gemini(messages):
@@ -22,10 +22,10 @@ def ask_gemini(messages):
             return "Gemini API key not configured. Please set GEMINI_API_KEY in .env file."
             
         print("Starting Gemini request...")
-        # Configure the API
+        # Configure the API with the new key
         genai.configure(api_key=GEMINI_API_KEY)
         
-        # Create the model instance
+        # Create the model instance with the correct model name
         model = genai.GenerativeModel(GEMINI_MODEL)
         print("Model instance created")
         
@@ -45,7 +45,7 @@ def ask_gemini(messages):
                 formatted_content += f"{msg['role'].upper()}: {msg['content']}\n\n"
         
         print(f"Prompt length: {len(formatted_content)} characters")
-        print(f"Using API key: {GEMINI_API_KEY[:5]}...{GEMINI_API_KEY[-5:] if GEMINI_API_KEY else 'None'}")
+        print(f"Using API key: {GEMINI_API_KEY[:10]}...{GEMINI_API_KEY[-5:] if GEMINI_API_KEY else 'None'}")
         
         # Generate response with timeout
         print("Sending request to Gemini API...")
@@ -57,7 +57,7 @@ def ask_gemini(messages):
                 "temperature": 0.7,
                 "top_p": 0.8,
                 "top_k": 40,
-                "max_output_tokens": 1024,
+                "max_output_tokens": 2048,
             }
         )
         

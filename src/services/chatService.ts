@@ -56,6 +56,38 @@ export const deleteChat = async (chatId: string): Promise<boolean> => {
   }
 };
 
+export const createChat = async (chatId: string, title: string, model: ModelType, systemPrompt?: string): Promise<boolean> => {
+  try {
+    console.log(`📝 Creating chat ${chatId}...`);
+    const response = await apiClient.post('/chats', {
+      id: chatId,
+      title,
+      model,
+      system_prompt: systemPrompt
+    });
+    console.log("✅ Chat created:", response.data);
+    return response.data.success;
+  } catch (error: any) {
+    console.error("❌ Error creating chat:", error);
+    throw new Error(error.response?.data?.detail || 'Failed to create chat');
+  }
+};
+
+export const saveMessage = async (chatId: string, role: string, content: string): Promise<boolean> => {
+  try {
+    console.log(`💬 Saving message to ${chatId}...`);
+    const response = await apiClient.post(`/chats/${chatId}/messages`, {
+      role,
+      content
+    });
+    console.log("✅ Message saved:", response.data);
+    return response.data.success;
+  } catch (error: any) {
+    console.error("❌ Error saving message:", error);
+    throw new Error(error.response?.data?.detail || 'Failed to save message');
+  }
+};
+
 export const updateSystemPrompt = async (chatId: string, systemPrompt: string): Promise<boolean> => {
   try {
     console.log(`⚙️ Updating system prompt for ${chatId}`);

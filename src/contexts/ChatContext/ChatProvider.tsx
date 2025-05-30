@@ -33,18 +33,13 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         setChats(formattedChats);
         console.log(`Loaded ${formattedChats.length} chats from backend`);
         
-        // Auto-select the most recent chat if available
-        if (formattedChats.length > 0) {
-          const mostRecentChat = formattedChats[0];
-          setCurrentChatId(mostRecentChat.id);
-          setCurrentModel(mostRecentChat.model);
-          
-          // Load messages for the selected chat
-          await loadChatMessages(mostRecentChat.id);
-        }
+        // DON'T auto-select any chat - let user choose
+        // This fixes issue #3 - no chat should be selected on startup
+        
       } catch (error) {
         console.error('Failed to load chats:', error);
       } finally {
+        setIsLoading(false);
         setIsInitialLoading(false);
       }
     };
@@ -80,22 +75,29 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Create a new chat with the specified model
-  const createChat = (model: ModelType, systemPrompt?: string) => {
-    const newChatId = Date.now().toString();
-    const newChat: Chat = {
-      id: newChatId,
-      title: 'New Chat',
-      messages: [],
-      model,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      systemPrompt,
-    };
-    
-    setChats((prev) => [newChat, ...prev]);
-    setCurrentChatId(newChatId);
-    setCurrentModel(model);
+  // Create a new chat with the specified model and save to backend immediately
+  const createChat = async (model: ModelType, systemPrompt?: string) => {
+    try {
+      const newChatId = Date.now().toString();
+      const newChat: Chat = {
+        id: newChatId,
+        title: 'New Chat',
+        messages: [],
+        model,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        systemPrompt,
+      };
+      
+      // Save to backend immediately to ensure persistence
+      await apiService.createChat(newChatId, 'New Chat', model, systemPrompt);
+      
+      setChats((prev) => [newChat, ...prev]);
+      setCurrentChatId(newChatId);
+      setCurrentModel(model);
+    } catch (error) {
+      console.error('Error creating chat:', error);
+    }
   };
 
   // Select an existing chat and load its messages
@@ -112,56 +114,71 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Add a message to a specific chat
-  const addMessage = (chatId: string, message: Omit<Message, 'id' | 'timestamp'>) => {
-    setChats((prev) => {
-      const existingChat = prev.find((chat) => chat.id === chatId);
-      
-      if (existingChat) {
-        // Update existing chat
-        return prev.map((chat) => {
-          if (chat.id === chatId) {
-            const shouldUpdateTitle = chat.title === 'New Chat' && message.role === 'user' && chat.messages.length === 0;
-            const newTitle = shouldUpdateTitle ? message.content.slice(0, 30) + (message.content.length > 30 ? '...' : '') : chat.title;
-            
-            const newMessage: Message = {
-              ...message,
-              id: Date.now().toString(),
-              timestamp: new Date(),
-            };
-            
-            return {
-              ...chat,
-              title: newTitle,
-              messages: [...chat.messages, newMessage],
-              updatedAt: new Date(),
-            };
+  // Add a message to a specific chat and save to backend
+  const addMessage = async (chatId: string, message: Omit<Message, 'id' | 'timestamp'>) => {
+    try {
+      setChats((prev) => {
+        const existingChat = prev.find((chat) => chat.id === chatId);
+        
+        if (existingChat) {
+          // Update existing chat
+          return prev.map((chat) => {
+            if (chat.id === chatId) {
+              const shouldUpdateTitle = chat.title === 'New Chat' && message.role === 'user' && chat.messages.length === 0;
+              const newTitle = shouldUpdateTitle ? message.content.slice(0, 30) + (message.content.length > 30 ? '...' : '') : chat.title;
+              
+              const newMessage: Message = {
+                ...message,
+                id: Date.now().toString(),
+                timestamp: new Date(),
+              };
+              
+              // Save to backend
+              if (message.role === 'user' || message.role === 'assistant') {
+                apiService.saveMessage(chatId, message.role, message.content).catch(console.error);
+              }
+              
+              return {
+                ...chat,
+                title: newTitle,
+                messages: [...chat.messages, newMessage],
+                updatedAt: new Date(),
+              };
+            }
+            return chat;
+          });
+        } else {
+          // Create a new chat with this message
+          const title = message.role === 'user' ? message.content.slice(0, 30) + (message.content.length > 30 ? '...' : '') : 'New Chat';
+          
+          const newMessage: Message = {
+            ...message,
+            id: Date.now().toString(),
+            timestamp: new Date(),
+          };
+          
+          const newChat: Chat = {
+            id: chatId,
+            title,
+            messages: [newMessage],
+            model: currentModel,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          };
+          
+          // Save to backend
+          apiService.createChat(chatId, title, currentModel).catch(console.error);
+          if (message.role === 'user' || message.role === 'assistant') {
+            apiService.saveMessage(chatId, message.role, message.content).catch(console.error);
           }
-          return chat;
-        });
-      } else {
-        // Create a new chat with this message
-        const title = message.role === 'user' ? message.content.slice(0, 30) + (message.content.length > 30 ? '...' : '') : 'New Chat';
-        
-        const newMessage: Message = {
-          ...message,
-          id: Date.now().toString(),
-          timestamp: new Date(),
-        };
-        
-        const newChat: Chat = {
-          id: chatId,
-          title,
-          messages: [newMessage],
-          model: currentModel,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
-        
-        setCurrentChatId(chatId);
-        return [newChat, ...prev.filter(chat => chat.id !== chatId)];
-      }
-    });
+          
+          setCurrentChatId(chatId);
+          return [newChat, ...prev.filter(chat => chat.id !== chatId)];
+        }
+      });
+    } catch (error) {
+      console.error('Error adding message:', error);
+    }
   };
 
   // Delete a chat

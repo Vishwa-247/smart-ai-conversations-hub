@@ -8,6 +8,8 @@ import {
   deleteChat,
   sendMessage,
   updateSystemPrompt,
+  createChat,
+  saveMessage,
 } from './chatService';
 import { ModelType, ChatMessage } from './types';
 
@@ -19,6 +21,8 @@ export const apiService = {
   deleteChat,
   sendMessage,
   updateSystemPrompt,
+  createChat,
+  saveMessage,
 };
 
 // Also export individual functions for compatibility
@@ -29,6 +33,8 @@ export {
   deleteChat,
   sendMessage,
   updateSystemPrompt,
+  createChat,
+  saveMessage,
 };
 
 // Re-export types
