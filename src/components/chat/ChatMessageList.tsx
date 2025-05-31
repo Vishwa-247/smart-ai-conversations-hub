@@ -32,10 +32,10 @@ export default function ChatMessageList({
       {/* System Prompt Section */}
       {showSystemPrompt && (
         <SystemPromptInput
-          systemPrompt={systemPrompt}
-          setSystemPrompt={setSystemPrompt}
+          value={systemPrompt}
+          onChange={setSystemPrompt}
           isEditing={isEditingSystemPrompt}
-          onToggleEdit={toggleSystemPromptEditor}
+          toggleEdit={toggleSystemPromptEditor}
           onSave={handleSaveSystemPrompt}
         />
       )}

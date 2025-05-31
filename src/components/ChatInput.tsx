@@ -35,6 +35,7 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
     e.preventDefault();
     if ((!input.trim() && files.length === 0) || disabled) return;
     
+    // Send the message with files (they will be shown in the chat message)
     onSend(input, files.length > 0 ? files : undefined);
     setInput("");
     setFiles([]);
@@ -105,19 +106,19 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
       if (mediaFiles.length > 0) {
         setFiles(prevFiles => [...prevFiles, ...mediaFiles]);
         
-        // For images, add analysis prompt
+        // For images, add a more natural analysis prompt
         const imageFiles = mediaFiles.filter(file => file.type.startsWith('image/'));
-        if (imageFiles.length > 0) {
+        if (imageFiles.length > 0 && !input.trim()) {
           const analysisPrompt = imageFiles.length === 1 
-            ? "Please analyze this image and describe what you see in detail."
-            : `Please analyze these ${imageFiles.length} images and describe what you see in each one.`;
+            ? "What do you see in this image?"
+            : `What do you see in these ${imageFiles.length} images?`;
           
-          setInput(prev => prev ? `${prev}\n\n${analysisPrompt}` : analysisPrompt);
+          setInput(analysisPrompt);
         }
         
         toast({
-          title: "Files added for analysis",
-          description: `${mediaFiles.length} file(s) ready to analyze and send`,
+          title: "Files ready for analysis",
+          description: `${mediaFiles.length} file(s) ready to send`,
         });
       }
     }

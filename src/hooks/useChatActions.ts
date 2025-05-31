@@ -19,6 +19,7 @@ export function useChatActions() {
   
   const [showSystemPrompt, setShowSystemPrompt] = useState<boolean>(false);
   const [systemPrompt, setSystemPrompt] = useState<string>("");
+  const [messageFiles, setMessageFiles] = useState<{[key: string]: File[]}>({});
   const { isEditing: isEditingSystemPrompt, toggleEditMode: toggleSystemPromptEditor, saveSystemPrompt } = useSystemPrompt();
   const { toast } = useToast();
   
@@ -64,10 +65,22 @@ export function useChatActions() {
     const isNewChat = !currentChatId || (currentChat && currentChat.messages.length === 0);
     const systemPromptToUse = showSystemPrompt ? systemPrompt : (currentChat?.systemPrompt || "");
     
+    // Create message ID for tracking files
+    const messageId = Date.now().toString();
+    
+    // Store files for this message
+    if (files && files.length > 0) {
+      setMessageFiles(prev => ({
+        ...prev,
+        [messageId]: files
+      }));
+    }
+    
     // Add user message
     const userMessage = {
       role: "user" as const,
-      content: content + (files && files.length > 0 ? ` [${files.length} file(s) attached]` : ''),
+      content: content,
+      id: messageId,
     };
     
     // If it's a new chat, we don't have a chat ID yet
@@ -161,6 +174,7 @@ export function useChatActions() {
     handleSaveSystemPrompt,
     handleSendMessage,
     isLoading,
-    getSystemPrompt
+    getSystemPrompt,
+    messageFiles
   };
 }
