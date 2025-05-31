@@ -46,6 +46,16 @@ class ChatResponse(BaseModel):
     conversation_id: str
     model_used: Optional[str] = None
 
+class CreateChatRequest(BaseModel):
+    id: str
+    title: str
+    model: str
+    system_prompt: Optional[str] = None
+
+class SaveMessageRequest(BaseModel):
+    role: str
+    content: str
+
 @app.get("/api/health")
 async def health_check():
     return {"status": "ok", "message": "AI Chat API is running"}
@@ -157,11 +167,32 @@ async def get_chats():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/api/chats")
+async def create_chat(request: CreateChatRequest):
+    try:
+        success = mongo_db.create_chat(
+            chat_id=request.id,
+            model=request.model,
+            title=request.title,
+            system_prompt=request.system_prompt
+        )
+        return {"success": success}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/api/chats/{chat_id}")
 async def get_chat_history(chat_id: str, limit: int = 50):
     try:
         messages = mongo_db.get_chat_history(chat_id, limit)
         return {"messages": messages}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/chats/{chat_id}/messages")
+async def save_message(chat_id: str, request: SaveMessageRequest):
+    try:
+        success = mongo_db.save_message(chat_id, request.role, request.content)
+        return {"success": success}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

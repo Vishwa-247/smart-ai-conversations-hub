@@ -4,14 +4,16 @@ import { useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import { User, Bot } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import ChatActions from "./ChatActions";
 import gsap from "gsap";
 
 interface ChatMessageProps {
   message: Message;
   isLastMessage: boolean;
+  onRegenerate?: () => void;
 }
 
-export default function ChatMessage({ message, isLastMessage }: ChatMessageProps) {
+export default function ChatMessage({ message, isLastMessage, onRegenerate }: ChatMessageProps) {
   const messageRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
@@ -37,9 +39,9 @@ export default function ChatMessage({ message, isLastMessage }: ChatMessageProps
   return (
     <div
       ref={messageRef}
-      className={`py-6 px-4 ${
+      className={`group py-6 px-4 ${
         isUser ? "bg-transparent" : "bg-muted/10"
-      } w-full`}
+      } w-full hover:bg-muted/5 transition-colors`}
     >
       <div className="max-w-3xl mx-auto flex gap-4">
         <div className="flex-shrink-0 mt-0.5">
@@ -57,8 +59,17 @@ export default function ChatMessage({ message, isLastMessage }: ChatMessageProps
         </div>
         
         <div className="flex flex-col flex-1">
-          <div className="font-medium text-sm mb-1">
-            {isUser ? "You" : message.model || "Assistant"}
+          <div className="flex items-center justify-between mb-1">
+            <div className="font-medium text-sm">
+              {isUser ? "You" : message.model || "Assistant"}
+            </div>
+            {!isUser && (
+              <ChatActions 
+                content={message.content}
+                onRegenerate={onRegenerate}
+                chatTitle="Chat Message"
+              />
+            )}
           </div>
           <div className="prose dark:prose-invert prose-sm max-w-none">
             <ReactMarkdown>{message.content}</ReactMarkdown>

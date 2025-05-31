@@ -1,9 +1,8 @@
-
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Send, Plus, FileAudio, FileImage, File } from "lucide-react";
 import { FormEvent, useState, useRef } from "react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { apiClient } from "@/services/apiClient";
 import { 
   DropdownMenu,
@@ -12,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import FilePreview from "./FilePreview";
+import VoiceInput from "./VoiceInput";
 
 interface ChatInputProps {
   onSend: (message: string, files?: File[]) => void;
@@ -41,6 +41,10 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
     }
   };
 
+  const handleVoiceTranscript = (transcript: string) => {
+    setInput(prev => prev + (prev ? " " : "") + transcript);
+  };
+
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const selectedFiles = Array.from(e.target.files);
@@ -51,9 +55,9 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
         return ['.pdf', '.docx', '.txt', '.md'].includes(extension);
       });
       
-      const otherFiles = selectedFiles.filter(file => {
+      const mediaFiles = selectedFiles.filter(file => {
         const extension = '.' + file.name.split('.').pop()?.toLowerCase();
-        return !['.pdf', '.docx', '.txt', '.md'].includes(extension);
+        return ['.jpg', '.jpeg', '.png', '.gif', '.mp3', '.wav', '.mp4', '.mov'].includes(extension);
       });
       
       // Process document files for RAG
@@ -91,17 +95,16 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
         setUploadingDocument(false);
       }
       
-      // Add all files (including images and audio) to the chat
-      if (otherFiles.length > 0) {
-        setFiles(prevFiles => [...prevFiles, ...otherFiles]);
+      // Add media files to chat for analysis
+      if (mediaFiles.length > 0) {
+        setFiles(prevFiles => [...prevFiles, ...mediaFiles]);
         toast({
-          title: "Files added",
-          description: `${otherFiles.length} file(s) ready to send`,
+          title: "Files added for analysis",
+          description: `${mediaFiles.length} file(s) ready to analyze and send`,
         });
       }
     }
     
-    // Reset the input
     e.target.value = '';
   };
 
@@ -163,7 +166,7 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
         <div className="relative">
           <Textarea
             placeholder="Type your message here..."
-            className="resize-none pr-24 min-h-[50px] max-h-[200px] rounded-xl border border-foreground/20 shadow-sm bg-background"
+            className="resize-none pr-32 min-h-[50px] max-h-[200px] rounded-xl border border-foreground/20 shadow-sm bg-background"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -172,6 +175,11 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
           />
           
           <div className="absolute right-2 bottom-1.5 flex gap-2">
+            <VoiceInput 
+              onTranscript={handleVoiceTranscript}
+              disabled={disabled || uploadingDocument}
+            />
+            
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -213,7 +221,7 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
         </div>
       </div>
       <div className="text-xs text-center mt-2 text-muted-foreground">
-        {uploadingDocument ? "Processing document for AI context..." : "Press Enter to send • Upload images, audio, or documents"}
+        {uploadingDocument ? "Processing document for AI context..." : "Press Enter to send • Upload images, audio, or documents • Use voice input"}
       </div>
     </form>
   );
