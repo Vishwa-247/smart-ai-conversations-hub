@@ -7,7 +7,6 @@ import ChatMessageList from "./ChatMessageList";
 import EmptyChat from "./EmptyChat";
 import { useChat } from "@/contexts/ChatContext";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2 } from "lucide-react";
 
 export default function Chat() {
   const { isInitialLoading, currentModel } = useChat();
@@ -90,27 +89,7 @@ export default function Chat() {
     <div className="flex h-screen flex-col">
       <ChatHeader />
       
-      <div className="flex-1 overflow-y-auto custom-scrollbar relative">
-        {/* Loading overlay only in chat area with model-specific message */}
-        {isLoading && (
-          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
-            <div className="flex items-center gap-3 bg-background border rounded-lg p-6 shadow-lg">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              <div className="text-left">
-                <div className="text-sm font-medium">
-                  {currentModel === 'phi3:mini' ? 'Ollama is generating response...' : 'AI is thinking...'}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {currentModel === 'phi3:mini' 
-                    ? 'Local Phi3 model is processing your request' 
-                    : 'Please wait while we generate your response'
-                  }
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-        
+      <div className="flex-1 overflow-y-auto custom-scrollbar">
         <ChatMessageList
           messages={currentChat?.messages || []}
           systemPrompt={systemPrompt}
@@ -119,6 +98,8 @@ export default function Chat() {
           toggleSystemPromptEditor={toggleSystemPromptEditor}
           handleSaveSystemPrompt={handleSaveSystemPrompt}
           showSystemPrompt={showSystemPrompt}
+          isLoading={isLoading}
+          currentModel={currentModel}
         />
       </div>
       

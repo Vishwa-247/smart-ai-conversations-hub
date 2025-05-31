@@ -99,8 +99,8 @@ async def chat(request: MessageRequest):
                 "content": system_prompt or "You are a helpful AI assistant."
             }]
         elif conversation_id not in conversations_cache:
-            # Load conversation history
-            messages_db = mongo_db.get_chat_history(conversation_id)
+            # Load conversation history with limit for performance
+            messages_db = mongo_db.get_chat_history(conversation_id, limit=20)
             chat_data = mongo_db.get_chat_by_id(conversation_id)
             system_prompt_content = chat_data.get('system_prompt') if chat_data else "You are a helpful AI assistant."
             
@@ -115,6 +115,10 @@ async def chat(request: MessageRequest):
                         "role": msg["role"],
                         "content": msg["content"]
                     })
+        
+        # Limit conversation history to last 15 messages for performance
+        if len(conversations_cache[conversation_id]) > 16:  # 1 system + 15 messages
+            conversations_cache[conversation_id] = [conversations_cache[conversation_id][0]] + conversations_cache[conversation_id][-15:]
         
         # Check if we have relevant documents
         enhanced_message = message
@@ -170,13 +174,13 @@ async def get_chats():
 @app.post("/api/chats")
 async def create_chat(request: CreateChatRequest):
     try:
-        success = mongo_db.create_chat(
-            chat_id=request.id,
+        # Create new chat and return the generated ID
+        chat_id = mongo_db.create_chat(
             model=request.model,
             title=request.title,
             system_prompt=request.system_prompt
         )
-        return {"success": success}
+        return {"success": True, "chat_id": chat_id}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -231,3 +235,33 @@ async def get_uploaded_documents():
         return {"documents": documents}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# New endpoint for URL scraping
+@app.post("/api/scrape-url")
+async def scrape_url(request: dict):
+    try:
+        url = request.get('url', '')
+        if not url:
+            raise HTTPException(status_code=400, detail="URL is required")
+        
+        # Simple URL scraping implementation
+        import requests
+        from bs4 import BeautifulSoup
+        
+        response = requests.get(url, timeout=10)
+        soup = BeautifulSoup(response.content, 'html.parser')
+        
+        # Extract text content
+        title = soup.find('title').get_text() if soup.find('title') else ''
+        paragraphs = [p.get_text().strip() for p in soup.find_all('p') if p.get_text().strip()]
+        
+        content = f"Title: {title}\n\n" + "\n\n".join(paragraphs[:10])  # Limit to first 10 paragraphs
+        
+        return {
+            "success": True,
+            "url": url,
+            "title": title,
+            "content": content
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to scrape URL: {str(e)}")

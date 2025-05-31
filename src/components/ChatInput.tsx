@@ -1,6 +1,7 @@
+
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Plus, FileAudio, FileImage, File } from "lucide-react";
+import { Send, Plus, FileAudio, FileImage, File, Link } from "lucide-react";
 import { FormEvent, useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { apiClient } from "@/services/apiClient";
@@ -10,6 +11,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import FilePreview from "./FilePreview";
 import VoiceInput from "./VoiceInput";
 
@@ -22,6 +25,9 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
   const [input, setInput] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [uploadingDocument, setUploadingDocument] = useState(false);
+  const [showUrlDialog, setShowUrlDialog] = useState(false);
+  const [urlInput, setUrlInput] = useState("");
+  const [scrapingUrl, setScrapingUrl] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -98,6 +104,17 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
       // Add media files to chat for analysis
       if (mediaFiles.length > 0) {
         setFiles(prevFiles => [...prevFiles, ...mediaFiles]);
+        
+        // For images, add analysis prompt
+        const imageFiles = mediaFiles.filter(file => file.type.startsWith('image/'));
+        if (imageFiles.length > 0) {
+          const analysisPrompt = imageFiles.length === 1 
+            ? "Please analyze this image and describe what you see in detail."
+            : `Please analyze these ${imageFiles.length} images and describe what you see in each one.`;
+          
+          setInput(prev => prev ? `${prev}\n\n${analysisPrompt}` : analysisPrompt);
+        }
+        
         toast({
           title: "Files added for analysis",
           description: `${mediaFiles.length} file(s) ready to analyze and send`,
@@ -106,6 +123,36 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
     }
     
     e.target.value = '';
+  };
+
+  const handleUrlScrape = async () => {
+    if (!urlInput.trim()) return;
+    
+    setScrapingUrl(true);
+    try {
+      const response = await apiClient.post('/scrape-url', { url: urlInput });
+      const { title, content } = response.data;
+      
+      const scrapedContent = `URL: ${urlInput}\nTitle: ${title}\n\nContent:\n${content}`;
+      setInput(prev => prev ? `${prev}\n\n${scrapedContent}` : scrapedContent);
+      
+      toast({
+        title: "URL scraped successfully",
+        description: `Content from "${title}" has been added to your message.`,
+      });
+      
+      setShowUrlDialog(false);
+      setUrlInput("");
+    } catch (error: any) {
+      console.error('URL scraping error:', error);
+      toast({
+        title: "URL scraping failed",
+        description: error.response?.data?.detail || "Failed to scrape the URL",
+        variant: "destructive",
+      });
+    } finally {
+      setScrapingUrl(false);
+    }
   };
 
   const triggerFileInput = (accept: string) => {
@@ -151,78 +198,117 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
   };
 
   return (
-    <form onSubmit={handleSubmit} className="p-4 border-t border-border/30">
-      <div className="relative max-w-3xl mx-auto">
-        <input
-          type="file"
-          ref={fileInputRef}
-          className="hidden"
-          onChange={handleFileSelect}
-          multiple
-        />
-        
-        {renderSelectedFiles()}
-        
-        <div className="relative">
-          <Textarea
-            placeholder="Type your message here..."
-            className="resize-none pr-32 min-h-[50px] max-h-[200px] rounded-xl border border-foreground/20 shadow-sm bg-background"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            disabled={disabled || uploadingDocument}
-            rows={1}
+    <>
+      <form onSubmit={handleSubmit} className="p-4 border-t border-border/30">
+        <div className="relative max-w-3xl mx-auto">
+          <input
+            type="file"
+            ref={fileInputRef}
+            className="hidden"
+            onChange={handleFileSelect}
+            multiple
           />
           
-          <div className="absolute right-2 bottom-1.5 flex gap-2">
-            <VoiceInput 
-              onTranscript={handleVoiceTranscript}
+          {renderSelectedFiles()}
+          
+          <div className="relative">
+            <Textarea
+              placeholder="Type your message here..."
+              className="resize-none pr-40 min-h-[50px] max-h-[200px] rounded-xl border border-foreground/20 shadow-sm bg-background"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
               disabled={disabled || uploadingDocument}
+              rows={1}
             />
             
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-9 w-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
-                  disabled={disabled || uploadingDocument}
-                >
-                  <Plus className="h-5 w-5" />
-                  <span className="sr-only">Add files</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => triggerFileInput('image/*')}>
-                  <FileImage className="h-4 w-4 mr-2" />
-                  <span>Image</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => triggerFileInput('audio/*')}>
-                  <FileAudio className="h-4 w-4 mr-2" />
-                  <span>Audio</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => triggerFileInput('.pdf,.docx,.txt,.md')}>
-                  <File className="h-4 w-4 mr-2" />
-                  <span>Document</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            
-            <Button
-              size="icon"
-              type="submit"
-              disabled={input.trim() === '' && files.length === 0 || disabled || uploadingDocument}
-              className="h-9 w-9 rounded-lg bg-primary hover:bg-primary/90 transition-all"
-            >
-              <Send className="h-4 w-4" />
-              <span className="sr-only">Send message</span>
-            </Button>
+            <div className="absolute right-2 bottom-1.5 flex gap-2">
+              <VoiceInput 
+                onTranscript={handleVoiceTranscript}
+                disabled={disabled || uploadingDocument}
+              />
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-9 w-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
+                    disabled={disabled || uploadingDocument}
+                  >
+                    <Plus className="h-5 w-5" />
+                    <span className="sr-only">Add files</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => triggerFileInput('image/*')}>
+                    <FileImage className="h-4 w-4 mr-2" />
+                    <span>Image</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => triggerFileInput('audio/*')}>
+                    <FileAudio className="h-4 w-4 mr-2" />
+                    <span>Audio</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => triggerFileInput('.pdf,.docx,.txt,.md')}>
+                    <File className="h-4 w-4 mr-2" />
+                    <span>Document</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowUrlDialog(true)}>
+                    <Link className="h-4 w-4 mr-2" />
+                    <span>Scrape URL</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
+              <Button
+                size="icon"
+                type="submit"
+                disabled={input.trim() === '' && files.length === 0 || disabled || uploadingDocument}
+                className="h-9 w-9 rounded-lg bg-primary hover:bg-primary/90 transition-all"
+              >
+                <Send className="h-4 w-4" />
+                <span className="sr-only">Send message</span>
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
-      <div className="text-xs text-center mt-2 text-muted-foreground">
-        {uploadingDocument ? "Processing document for AI context..." : "Press Enter to send • Upload images, audio, or documents • Use voice input"}
-      </div>
-    </form>
+        <div className="text-xs text-center mt-2 text-muted-foreground">
+          {uploadingDocument ? "Processing document for AI context..." : "Press Enter to send • Upload images, audio, or documents • Use voice input • Scrape URLs"}
+        </div>
+      </form>
+
+      {/* URL Scraping Dialog */}
+      <Dialog open={showUrlDialog} onOpenChange={setShowUrlDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Scrape URL Content</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input
+              placeholder="Enter URL to scrape..."
+              value={urlInput}
+              onChange={(e) => setUrlInput(e.target.value)}
+              disabled={scrapingUrl}
+            />
+            <div className="flex gap-2">
+              <Button 
+                onClick={handleUrlScrape} 
+                disabled={!urlInput.trim() || scrapingUrl}
+                className="flex-1"
+              >
+                {scrapingUrl ? "Scraping..." : "Scrape Content"}
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setShowUrlDialog(false)}
+                disabled={scrapingUrl}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
