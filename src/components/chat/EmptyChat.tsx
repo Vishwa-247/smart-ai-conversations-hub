@@ -39,6 +39,25 @@ export default function EmptyChat({
     }
   };
 
+  const systemPromptSuggestions = [
+    {
+      title: "Career Coach",
+      prompt: "You are a professional career coach. Help users with career advice, resume tips, interview preparation, and professional development."
+    },
+    {
+      title: "Fitness Trainer",
+      prompt: "You are a certified fitness trainer and nutritionist. Help users with workout plans, nutrition advice, and healthy lifestyle tips."
+    },
+    {
+      title: "Study Assistant",
+      prompt: "You are an educational tutor. Help users understand complex topics, provide study strategies, and explain concepts clearly."
+    },
+    {
+      title: "Creative Writer",
+      prompt: "You are a creative writing assistant. Help users with storytelling, poetry, character development, and creative inspiration."
+    }
+  ];
+
   const examplePrompts = [
     "Explain quantum computing in simple terms",
     "Write a short story about a time traveler",
@@ -57,14 +76,33 @@ export default function EmptyChat({
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col items-center justify-center p-8 space-y-8">
+      <div className="flex-1 flex flex-col items-center justify-center p-8 space-y-8 overflow-y-auto">
         <div className="text-center space-y-4 max-w-2xl">
           <h2 className="text-3xl font-bold text-foreground">
             Welcome to AI Assistant
           </h2>
           <p className="text-lg text-muted-foreground">
-            Start a conversation, upload documents for context, or choose from these examples:
+            Start a conversation, upload documents for context, or choose from these options:
           </p>
+        </div>
+
+        {/* System Prompt Suggestions */}
+        <div className="w-full max-w-4xl space-y-4">
+          <h3 className="text-lg font-semibold text-center">System Prompt Suggestions</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {systemPromptSuggestions.map((suggestion, index) => (
+              <Card 
+                key={index} 
+                className="cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => setSystemPrompt(suggestion.prompt)}
+              >
+                <CardContent className="p-4">
+                  <h4 className="font-medium mb-2">{suggestion.title}</h4>
+                  <p className="text-sm text-muted-foreground">{suggestion.prompt}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
 
         {/* System Prompt Section */}
@@ -88,18 +126,21 @@ export default function EmptyChat({
         )}
 
         {/* Example Prompts */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-4xl">
-          {examplePrompts.map((prompt, index) => (
-            <Card 
-              key={index} 
-              className="cursor-pointer hover:bg-muted/50 transition-colors"
-              onClick={() => setMessage(prompt)}
-            >
-              <CardContent className="p-4">
-                <p className="text-sm">{prompt}</p>
-              </CardContent>
-            </Card>
-          ))}
+        <div className="w-full max-w-4xl space-y-4">
+          <h3 className="text-lg font-semibold text-center">Example Questions</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {examplePrompts.map((prompt, index) => (
+              <Card 
+                key={index} 
+                className="cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => setMessage(prompt)}
+              >
+                <CardContent className="p-4">
+                  <p className="text-sm">{prompt}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
 
         {/* Chat Input */}

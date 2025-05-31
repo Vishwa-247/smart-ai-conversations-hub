@@ -91,11 +91,15 @@ export default function Chat() {
       <ChatHeader />
       
       <div className="flex-1 overflow-y-auto custom-scrollbar relative">
+        {/* Loading overlay only in chat area */}
         {isLoading && (
           <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
-            <div className="flex items-center gap-2 bg-background border rounded-lg p-4 shadow-lg">
-              <Loader2 className="h-5 w-5 animate-spin" />
-              <span className="text-sm">Generating response...</span>
+            <div className="flex items-center gap-3 bg-background border rounded-lg p-6 shadow-lg">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              <div className="text-left">
+                <div className="text-sm font-medium">AI is thinking...</div>
+                <div className="text-xs text-muted-foreground">Please wait while we generate your response</div>
+              </div>
             </div>
           </div>
         )}

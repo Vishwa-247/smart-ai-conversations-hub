@@ -33,8 +33,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         setChats(formattedChats);
         console.log(`Loaded ${formattedChats.length} chats from backend`);
         
-        // DON'T auto-select any chat - let user choose
-        // This fixes issue #3 - no chat should be selected on startup
+        // DO NOT auto-select any chat - let user choose
+        setCurrentChatId(null);
         
       } catch (error) {
         console.error('Failed to load chats:', error);
@@ -95,6 +95,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       setChats((prev) => [newChat, ...prev]);
       setCurrentChatId(newChatId);
       setCurrentModel(model);
+      
+      console.log(`Created new chat with ID: ${newChatId}`);
     } catch (error) {
       console.error('Error creating chat:', error);
     }
@@ -111,6 +113,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       if (chat.messages.length === 0) {
         await loadChatMessages(id);
       }
+      
+      console.log(`Selected chat: ${id}`);
     }
   };
 

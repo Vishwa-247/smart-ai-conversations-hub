@@ -9,10 +9,11 @@ import ThemeSelector from "./ThemeSelector";
 import { useSidebarAnimation } from "@/hooks/use-gsap-animations";
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
+import ModelInfo from "./ModelInfo";
 
 export default function ChatSidebar() {
   const { isOpen } = useSidebar();
-  const { chats, currentChatId, createChat, selectChat, deleteChat, currentModel } = useChat();
+  const { chats, currentChatId, createChat, selectChat, deleteChat, currentModel, setCurrentModel } = useChat();
   const sidebarRef = useSidebarAnimation(isOpen);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -33,8 +34,13 @@ export default function ChatSidebar() {
     }
   }, [chats.length]);
 
-  const handleCreateChat = () => {
-    createChat(currentModel);
+  const handleCreateChat = async () => {
+    console.log('Creating new chat with model:', currentModel);
+    await createChat(currentModel);
+  };
+
+  const handleHomeClick = () => {
+    window.location.reload();
   };
 
   if (!isOpen) {
@@ -58,7 +64,10 @@ export default function ChatSidebar() {
       </div>
       
       <div className="p-2 mt-1">
-        <h2 className="text-sm font-medium px-3 py-1">Models</h2>
+        <div className="flex items-center justify-between px-3 py-1">
+          <h2 className="text-sm font-medium">Models</h2>
+          <ModelInfo />
+        </div>
         <ModelSelector />
       </div>
       
@@ -84,7 +93,14 @@ export default function ChatSidebar() {
       </div>
       
       <div className="p-3 border-t flex items-center justify-between bg-sidebar-accent/5 border-sidebar-border/30 rounded-b-xl">
-        <div className="text-xs font-medium text-sidebar-foreground/60">© 2025 AI Chat Assistant</div>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={handleHomeClick}
+          className="text-xs font-medium text-sidebar-foreground/60 hover:text-sidebar-foreground"
+        >
+          🏠 Home
+        </Button>
         <ThemeSelector />
       </div>
     </div>

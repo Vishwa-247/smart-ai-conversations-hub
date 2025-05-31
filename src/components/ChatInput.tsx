@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Send, Plus, FileAudio, FileImage, File } from "lucide-react";
@@ -90,9 +91,13 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
         setUploadingDocument(false);
       }
       
-      // Add other files (images, audio) to the chat
+      // Add all files (including images and audio) to the chat
       if (otherFiles.length > 0) {
         setFiles(prevFiles => [...prevFiles, ...otherFiles]);
+        toast({
+          title: "Files added",
+          description: `${otherFiles.length} file(s) ready to send`,
+        });
       }
     }
     
@@ -119,7 +124,6 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
               file={file}
               onRemove={() => setFiles(files.filter((_, i) => i !== index))}
               onView={() => {
-                // Create a temporary URL for viewing
                 const url = URL.createObjectURL(file);
                 window.open(url, '_blank');
                 setTimeout(() => URL.revokeObjectURL(url), 1000);
@@ -189,7 +193,7 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
                   <FileAudio className="h-4 w-4 mr-2" />
                   <span>Audio</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => triggerFileInput('.pdf,.docx,.txt,.md,*')}>
+                <DropdownMenuItem onClick={() => triggerFileInput('.pdf,.docx,.txt,.md')}>
                   <File className="h-4 w-4 mr-2" />
                   <span>Document</span>
                 </DropdownMenuItem>
@@ -209,7 +213,7 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
         </div>
       </div>
       <div className="text-xs text-center mt-2 text-muted-foreground">
-        {uploadingDocument ? "Processing document for AI context..." : "Press Enter to send"}
+        {uploadingDocument ? "Processing document for AI context..." : "Press Enter to send • Upload images, audio, or documents"}
       </div>
     </form>
   );
