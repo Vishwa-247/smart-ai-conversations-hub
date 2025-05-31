@@ -16,8 +16,8 @@ export default function VoiceInput({ onTranscript, disabled = false }: VoiceInpu
 
   useEffect(() => {
     if (typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      const recognitionInstance = new SpeechRecognition();
+      const SpeechRecognitionClass = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognitionInstance = new SpeechRecognitionClass();
       
       recognitionInstance.continuous = false;
       recognitionInstance.interimResults = false;

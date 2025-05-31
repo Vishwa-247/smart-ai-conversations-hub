@@ -102,7 +102,7 @@ export default function EmptyChat({
                   <Button
                     key={index}
                     variant="outline"
-                    className="h-auto p-4 text-left justify-start"
+                    className="h-auto p-4 text-left justify-start hover:bg-transparent border-border/30 transition-all duration-300 hover:border-primary/30"
                     onClick={() => handleSystemPromptSelect(suggestion)}
                   >
                     <div className="space-y-1">
