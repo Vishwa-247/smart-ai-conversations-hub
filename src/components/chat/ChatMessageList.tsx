@@ -50,9 +50,9 @@ export default function ChatMessageList({
           />
         ))}
         
-        {/* Inline Loading Indicator */}
+        {/* Inline Loading Indicator - Only show as last message */}
         {isLoading && (
-          <div className="py-6 px-4 w-full">
+          <div className="py-6 px-4 w-full bg-muted/10">
             <div className="max-w-3xl mx-auto flex gap-4">
               <div className="flex-shrink-0 mt-0.5">
                 <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center">
@@ -63,7 +63,8 @@ export default function ChatMessageList({
                 <div className="font-medium text-sm mb-1">
                   {currentModel === 'phi3:mini' ? 'Ollama (Phi3)' : 'Assistant'}
                 </div>
-                <div className="text-sm text-muted-foreground">
+                <div className="text-sm text-muted-foreground flex items-center gap-2">
+                  <Loader2 className="h-3 w-3 animate-spin" />
                   {currentModel === 'phi3:mini' 
                     ? 'Local model is generating response...' 
                     : 'Thinking...'

@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Send, Plus, FileAudio, FileImage, File, Link } from "lucide-react";
@@ -42,9 +41,15 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit(e);
+    if (e.key === "Enter") {
+      if (e.shiftKey) {
+        // Shift+Enter: Allow new line (default behavior)
+        return;
+      } else {
+        // Enter: Submit the form
+        e.preventDefault();
+        handleSubmit(e);
+      }
     }
   };
 
@@ -214,7 +219,7 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
           
           <div className="relative">
             <Textarea
-              placeholder="Type your message here..."
+              placeholder="Type your message here... (Enter to send, Shift+Enter for new line)"
               className="resize-none pr-40 min-h-[50px] max-h-[200px] rounded-xl border border-foreground/20 shadow-sm bg-background"
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -274,7 +279,7 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
           </div>
         </div>
         <div className="text-xs text-center mt-2 text-muted-foreground">
-          {uploadingDocument ? "Processing document for AI context..." : "Press Enter to send • Upload images, audio, or documents • Use voice input • Scrape URLs"}
+          {uploadingDocument ? "Processing document for AI context..." : "Press Enter to send • Shift+Enter for new line • Upload images, audio, or documents • Use voice input • Scrape URLs"}
         </div>
       </form>
 

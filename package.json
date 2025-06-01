@@ -44,6 +44,7 @@
     "@tanstack/react-query": "^5.56.2",
     "@types/gsap": "^3.0.0",
     "axios": "^1.9.0",
+    "beautifulsoup4": "^0.0.1-security",
     "chromadb": "^1.8.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

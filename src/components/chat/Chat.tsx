@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import ChatHeader from "@/components/ChatHeader";
 import ChatInput from "@/components/ChatInput";
@@ -7,6 +6,7 @@ import ChatMessageList from "./ChatMessageList";
 import EmptyChat from "./EmptyChat";
 import { useChat } from "@/contexts/ChatContext";
 import { Skeleton } from "@/components/ui/skeleton";
+import ChatSuggestions from "@/components/ChatSuggestions";
 
 export default function Chat() {
   const { isInitialLoading, currentModel } = useChat();
@@ -79,6 +79,9 @@ export default function Chat() {
     );
   }
 
+  // For new chats (existing chat but no messages), show suggestions
+  const showSuggestions = currentChat && currentChat.messages.length === 0;
+
   return (
     <div className="flex h-screen flex-col">
       <ChatHeader />
@@ -95,6 +98,16 @@ export default function Chat() {
           isLoading={isLoading}
           currentModel={currentModel}
         />
+        
+        {/* Show suggestions for new chats */}
+        {showSuggestions && (
+          <div className="py-8">
+            <ChatSuggestions 
+              onSuggestionClick={handleSendWithSystemPrompt}
+              isLoading={isLoading}
+            />
+          </div>
+        )}
       </div>
       
       <ChatInput onSend={handleSendWithSystemPrompt} disabled={isLoading} />
