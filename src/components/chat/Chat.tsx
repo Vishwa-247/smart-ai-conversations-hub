@@ -44,12 +44,6 @@ export default function Chat() {
   
   // Enhanced send handler for system prompt workflow
   const handleSendWithSystemPrompt = (content: string, files?: File[]) => {
-    // For new chats with no messages, first message can be system prompt
-    if ((!currentChatId || (currentChat && currentChat.messages.length === 0)) && showSystemPrompt && !systemPrompt.trim()) {
-      // If no system prompt is set and this is the first message, ask if they want to use it as system prompt
-      setSystemPrompt(content);
-    }
-    
     handleSendMessage(content, files);
   };
   
