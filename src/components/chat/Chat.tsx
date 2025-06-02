@@ -57,6 +57,18 @@ export default function Chat() {
   const handleRewriteComplete = () => {
     setRewriteMessage("");
   };
+
+  // Handle regeneration
+  const handleRegenerate = (messageIndex: number) => {
+    if (!currentChat || !currentChatId) return;
+    
+    // Find the user message that prompted this AI response
+    const userMessage = currentChat.messages[messageIndex - 1];
+    if (userMessage && userMessage.role === "user") {
+      // Resend the user message to generate a new response
+      handleSendMessage(userMessage.content);
+    }
+  };
   
   // Show loading skeleton while initial data loads
   if (isInitialLoading) {
@@ -109,6 +121,7 @@ export default function Chat() {
           isLoading={isLoading}
           currentModel={currentModel}
           onRewrite={handleRewrite}
+          onRegenerate={handleRegenerate}
         />
         
         {/* Show suggestions for new chats */}

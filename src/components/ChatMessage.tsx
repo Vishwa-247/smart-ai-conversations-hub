@@ -1,25 +1,37 @@
+
 import { Message } from "@/contexts/ChatContext";
 import { useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
-import { User, Bot, FileImage, FileAudio, File as FileIcon, RefreshCcw, Edit2, Copy, Check } from "lucide-react";
+import { User, Bot, FileImage, FileAudio, File as FileIcon, RefreshCcw, Edit2, Copy, Check, Download } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import ChatActions from "./ChatActions";
 import gsap from "gsap";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 interface ChatMessageProps {
   message: Message;
+  messageIndex?: number;
   isLastMessage: boolean;
   onRegenerate?: () => void;
   onRewrite?: (originalMessage: string) => void;
+  onEdit?: (messageIndex: number, newContent: string) => void;
   files?: File[];
 }
 
-export default function ChatMessage({ message, isLastMessage, onRegenerate, onRewrite, files }: ChatMessageProps) {
+export default function ChatMessage({ 
+  message, 
+  messageIndex, 
+  isLastMessage, 
+  onRegenerate, 
+  onRewrite, 
+  onEdit,
+  files 
+}: ChatMessageProps) {
   const messageRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(message.content);
   const { toast } = useToast();
   
   useEffect(() => {
@@ -64,6 +76,41 @@ export default function ChatMessage({ message, isLastMessage, onRegenerate, onRe
     if (onRewrite) {
       onRewrite(message.content);
     }
+  };
+
+  const handleEdit = () => {
+    if (isUser) {
+      setIsEditing(true);
+    }
+  };
+
+  const handleSaveEdit = () => {
+    if (onEdit && messageIndex !== undefined) {
+      onEdit(messageIndex, editContent);
+    }
+    setIsEditing(false);
+  };
+
+  const handleCancelEdit = () => {
+    setEditContent(message.content);
+    setIsEditing(false);
+  };
+
+  const handleExport = () => {
+    const blob = new Blob([message.content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ai-response-${Date.now()}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Exported successfully",
+      description: "Response has been downloaded as a text file",
+    });
   };
 
   const renderFileAttachments = () => {
@@ -155,46 +202,79 @@ export default function ChatMessage({ message, isLastMessage, onRegenerate, onRe
             <div className="font-medium text-sm">
               {isUser ? "You" : message.model || "Assistant"}
             </div>
-            {!isUser && (
-              <div className="flex items-center gap-1">
+            
+            {/* Action buttons */}
+            <div className="flex items-center gap-1">
+              {isUser ? (
+                // Edit button for user messages
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={handleCopy}
+                  onClick={handleEdit}
                   className="h-8 px-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={handleRewrite}
-                  className="h-8 px-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                  title="Rewrite this response"
+                  title="Edit message"
                 >
                   <Edit2 className="h-3 w-3" />
                 </Button>
-                {onRegenerate && (
+              ) : (
+                // Copy, Export, and Regenerate buttons for AI responses
+                <>
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={onRegenerate}
+                    onClick={handleCopy}
                     className="h-8 px-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                    title="Regenerate response"
+                    title="Copy response"
                   >
-                    <RefreshCcw className="h-3 w-3" />
+                    {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
                   </Button>
-                )}
-              </div>
-            )}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleExport}
+                    className="h-8 px-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Export response"
+                  >
+                    <Download className="h-3 w-3" />
+                  </Button>
+                  {onRegenerate && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={onRegenerate}
+                      className="h-8 px-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Regenerate response"
+                    >
+                      <RefreshCcw className="h-3 w-3" />
+                    </Button>
+                  )}
+                </>
+              )}
+            </div>
           </div>
           
           {/* File attachments for user messages */}
           {isUser && renderFileAttachments()}
           
-          <div className="prose dark:prose-invert prose-sm max-w-none">
-            <ReactMarkdown>{message.content}</ReactMarkdown>
-          </div>
+          {/* Message content or edit input */}
+          {isEditing ? (
+            <div className="space-y-2">
+              <textarea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                className="w-full p-2 border border-border rounded-md resize-none min-h-[100px]"
+                autoFocus
+              />
+              <div className="flex gap-2">
+                <Button size="sm" onClick={handleSaveEdit}>Save</Button>
+                <Button size="sm" variant="outline" onClick={handleCancelEdit}>Cancel</Button>
+              </div>
+            </div>
+          ) : (
+            <div className="prose dark:prose-invert prose-sm max-w-none">
+              <ReactMarkdown>{message.content}</ReactMarkdown>
+            </div>
+          )}
         </div>
       </div>
     </div>

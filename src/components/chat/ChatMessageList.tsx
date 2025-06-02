@@ -18,6 +18,7 @@ interface ChatMessageListProps {
   isLoading: boolean;
   currentModel: ModelType;
   onRewrite?: (message: string) => void;
+  onRegenerate?: (messageIndex: number) => void;
 }
 
 export default function ChatMessageList({
@@ -31,6 +32,7 @@ export default function ChatMessageList({
   isLoading,
   currentModel,
   onRewrite,
+  onRegenerate,
 }: ChatMessageListProps) {
   const [loadingMessageId, setLoadingMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -44,8 +46,10 @@ export default function ChatMessageList({
   }, [messages]);
 
   const handleRegenerate = (messageIndex: number) => {
-    // Implementation for message regeneration
     console.log('Regenerating message at index:', messageIndex);
+    if (onRegenerate) {
+      onRegenerate(messageIndex);
+    }
   };
 
   const handleRewrite = (messageContent: string) => {
@@ -65,7 +69,7 @@ export default function ChatMessageList({
               onChange={setSystemPrompt}
               onSave={handleSaveSystemPrompt}
               isEditing={isEditingSystemPrompt}
-              onToggleEdit={toggleSystemPromptEditor}
+              toggleEdit={toggleSystemPromptEditor}
               disabled={isLoading}
             />
           </div>
@@ -77,6 +81,7 @@ export default function ChatMessageList({
         <ChatMessage
           key={`${message.role}-${index}`}
           message={message}
+          messageIndex={index}
           isLastMessage={index === messages.length - 1}
           onRegenerate={() => handleRegenerate(index)}
           onRewrite={handleRewrite}
