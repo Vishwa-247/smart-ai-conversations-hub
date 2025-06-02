@@ -1,8 +1,7 @@
-
 import { Message } from "@/contexts/ChatContext";
 import { useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
-import { User, Bot, FileImage, FileAudio, File as FileIcon, RefreshCcw, Edit, Link, Copy, Check } from "lucide-react";
+import { User, Bot, FileImage, FileAudio, File as FileIcon, RefreshCcw, Edit2, Copy, Check } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import ChatActions from "./ChatActions";
@@ -164,17 +163,16 @@ export default function ChatMessage({ message, isLastMessage, onRegenerate, onRe
                   onClick={handleCopy}
                   className="h-8 px-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
                 >
-                  {copied ? <Check className="h-3 w-3 mr-1" /> : <Copy className="h-3 w-3 mr-1" />}
-                  {copied ? "Copied" : "Copy"}
+                  {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
                 </Button>
                 <Button
                   size="sm"
                   variant="ghost"
                   onClick={handleRewrite}
                   className="h-8 px-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                  title="Rewrite this response"
                 >
-                  <Edit className="h-3 w-3 mr-1" />
-                  Rewrite
+                  <Edit2 className="h-3 w-3" />
                 </Button>
                 {onRegenerate && (
                   <Button
@@ -182,16 +180,11 @@ export default function ChatMessage({ message, isLastMessage, onRegenerate, onRe
                     variant="ghost"
                     onClick={onRegenerate}
                     className="h-8 px-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Regenerate response"
                   >
-                    <RefreshCcw className="h-3 w-3 mr-1" />
-                    Refresh
+                    <RefreshCcw className="h-3 w-3" />
                   </Button>
                 )}
-                <ChatActions 
-                  content={message.content}
-                  onRegenerate={onRegenerate}
-                  chatTitle="Chat Message"
-                />
               </div>
             )}
           </div>

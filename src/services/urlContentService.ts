@@ -1,5 +1,6 @@
 
 import { apiClient } from './apiClient';
+import { ScrapingStorageService } from './scrapingStorageService';
 
 export interface UrlScrapeResult {
   success: boolean;
@@ -29,6 +30,25 @@ Please analyze this content and provide a comprehensive summary highlighting the
     } catch (error: any) {
       console.error('URL content fetch error:', error);
       throw new Error(error.response?.data?.detail || 'Failed to fetch URL content');
+    }
+  }
+  
+  static async scrapeAndStore(url: string): Promise<string> {
+    try {
+      const response = await apiClient.post<UrlScrapeResult>('/scrape-url', { url });
+      const { title, content } = response.data;
+      
+      // Store the scraped content
+      const contentId = ScrapingStorageService.saveScrapedContent({
+        url,
+        title,
+        content,
+      });
+      
+      return contentId;
+    } catch (error: any) {
+      console.error('URL scraping error:', error);
+      throw new Error(error.response?.data?.detail || 'Failed to scrape URL');
     }
   }
   

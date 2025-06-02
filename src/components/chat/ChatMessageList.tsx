@@ -4,7 +4,7 @@ import { Message } from "@/contexts/ChatContext";
 import ChatMessage from "@/components/ChatMessage";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { SystemPromptInput } from "@/components/SystemPromptInput";
+import SystemPromptInput from "@/components/SystemPromptInput";
 import { ModelType } from "@/services/types";
 
 interface ChatMessageListProps {

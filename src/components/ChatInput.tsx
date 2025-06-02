@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Plus, FileAudio, FileImage, File, Link } from "lucide-react";
+import { Send, Plus, FileAudio, FileImage, File, Link, Archive } from "lucide-react";
 import { FormEvent, useState, useRef, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { apiClient } from "@/services/apiClient";
@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import FilePreview from "./FilePreview";
 import VoiceInput from "./VoiceInput";
+import ScrapingPreview from "./ScrapingPreview";
 
 interface ChatInputProps {
   onSend: (message: string, files?: File[]) => void;
@@ -33,6 +34,7 @@ export default function ChatInput({ onSend, disabled = false, rewriteMessage, on
   const [urlInput, setUrlInput] = useState("");
   const [scrapingUrl, setScrapingUrl] = useState(false);
   const [isRewriting, setIsRewriting] = useState(false);
+  const [showScrapingPreview, setShowScrapingPreview] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
@@ -177,26 +179,25 @@ export default function ChatInput({ onSend, disabled = false, rewriteMessage, on
     e.target.value = '';
   };
 
-  const handleUrlAnalysis = async () => {
+  const handleUrlScraping = async () => {
     if (!urlInput.trim()) return;
     
     setScrapingUrl(true);
     try {
-      const content = await UrlContentService.fetchAndSummarize(urlInput);
-      setInput(prev => prev ? `${prev}\n\n${content}` : content);
+      const contentId = await UrlContentService.scrapeAndStore(urlInput);
       
       toast({
-        title: "URL content fetched",
-        description: "Content has been added for analysis. Send the message to get a summary.",
+        title: "Content scraped successfully",
+        description: "URL content has been saved to your library. Check the preview to send it to AI.",
       });
       
       setShowUrlDialog(false);
       setUrlInput("");
     } catch (error: any) {
-      console.error('URL analysis error:', error);
+      console.error('URL scraping error:', error);
       toast({
-        title: "URL analysis failed",
-        description: error.message || "Failed to fetch URL content",
+        title: "URL scraping failed",
+        description: error.message || "Failed to scrape URL content",
         variant: "destructive",
       });
     } finally {
@@ -209,6 +210,10 @@ export default function ChatInput({ onSend, disabled = false, rewriteMessage, on
       fileInputRef.current.accept = accept;
       fileInputRef.current.click();
     }
+  };
+
+  const handleSendScrapedContent = (content: string) => {
+    setInput(content);
   };
 
   const renderSelectedFiles = () => {
@@ -278,6 +283,17 @@ export default function ChatInput({ onSend, disabled = false, rewriteMessage, on
                 disabled={disabled || uploadingDocument || processingFiles}
               />
               
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => setShowScrapingPreview(true)}
+                className="h-9 w-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
+                disabled={disabled || uploadingDocument || processingFiles}
+                title="View scraped content library"
+              >
+                <Archive className="h-5 w-5" />
+              </Button>
+              
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -305,7 +321,7 @@ export default function ChatInput({ onSend, disabled = false, rewriteMessage, on
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setShowUrlDialog(true)}>
                     <Link className="h-4 w-4 mr-2" />
-                    <span>Analyze URL</span>
+                    <span>Scrape URL</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -326,30 +342,30 @@ export default function ChatInput({ onSend, disabled = false, rewriteMessage, on
           {isRewriting ? "Rewriting mode - Edit the prompt above and send" : 
            processingFiles ? "Processing files..." : 
            uploadingDocument ? "Processing document for AI context..." : 
-           "Press Enter to send • Shift+Enter for new line • Upload images (OCR), audio, or documents • Use voice input • Analyze URLs"}
+           "Press Enter to send • Shift+Enter for new line • Upload files • Scrape URLs • View scraped content library"}
         </div>
       </form>
 
-      {/* URL Analysis Dialog */}
+      {/* URL Scraping Dialog */}
       <Dialog open={showUrlDialog} onOpenChange={setShowUrlDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Analyze URL Content</DialogTitle>
+            <DialogTitle>Scrape URL Content</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <Input
-              placeholder="Enter URL to analyze and summarize..."
+              placeholder="Enter URL to scrape and store..."
               value={urlInput}
               onChange={(e) => setUrlInput(e.target.value)}
               disabled={scrapingUrl}
             />
             <div className="flex gap-2">
               <Button 
-                onClick={handleUrlAnalysis} 
+                onClick={handleUrlScraping} 
                 disabled={!urlInput.trim() || scrapingUrl}
                 className="flex-1"
               >
-                {scrapingUrl ? "Analyzing..." : "Analyze Content"}
+                {scrapingUrl ? "Scraping..." : "Scrape & Store"}
               </Button>
               <Button 
                 variant="outline" 
@@ -362,6 +378,13 @@ export default function ChatInput({ onSend, disabled = false, rewriteMessage, on
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Scraping Preview Dialog */}
+      <ScrapingPreview
+        open={showScrapingPreview}
+        onOpenChange={setShowScrapingPreview}
+        onSendToAI={handleSendScrapedContent}
+      />
     </>
   );
 }
