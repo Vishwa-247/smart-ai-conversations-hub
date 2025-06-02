@@ -1,8 +1,11 @@
 
+import { useState, useEffect, useRef } from "react";
 import { Message } from "@/contexts/ChatContext";
-import ChatMessage from "../ChatMessage";
-import SystemPromptInput from "../SystemPromptInput";
-import { Loader2 } from "lucide-react";
+import ChatMessage from "@/components/ChatMessage";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { SystemPromptInput } from "@/components/SystemPromptInput";
+import { ModelType } from "@/services/types";
 
 interface ChatMessageListProps {
   messages: Message[];
@@ -12,8 +15,9 @@ interface ChatMessageListProps {
   toggleSystemPromptEditor: () => void;
   handleSaveSystemPrompt: () => void;
   showSystemPrompt: boolean;
-  isLoading?: boolean;
-  currentModel?: string;
+  isLoading: boolean;
+  currentModel: ModelType;
+  onRewrite?: (message: string) => void;
 }
 
 export default function ChatMessageList({
@@ -24,57 +28,79 @@ export default function ChatMessageList({
   toggleSystemPromptEditor,
   handleSaveSystemPrompt,
   showSystemPrompt,
-  isLoading = false,
-  currentModel = ""
+  isLoading,
+  currentModel,
+  onRewrite,
 }: ChatMessageListProps) {
+  const [loadingMessageId, setLoadingMessageId] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const handleRegenerate = (messageIndex: number) => {
+    // Implementation for message regeneration
+    console.log('Regenerating message at index:', messageIndex);
+  };
+
+  const handleRewrite = (messageContent: string) => {
+    if (onRewrite) {
+      onRewrite(messageContent);
+    }
+  };
+
   return (
-    <div className="w-full">
+    <div className="flex-1 overflow-y-auto">
       {/* System Prompt Section */}
       {showSystemPrompt && (
-        <SystemPromptInput
-          value={systemPrompt}
-          onChange={setSystemPrompt}
-          isEditing={isEditingSystemPrompt}
-          toggleEdit={toggleSystemPromptEditor}
-          onSave={handleSaveSystemPrompt}
-        />
+        <div className="p-4 border-b border-border/30 bg-muted/5">
+          <div className="max-w-3xl mx-auto">
+            <SystemPromptInput
+              value={systemPrompt}
+              onChange={setSystemPrompt}
+              onSave={handleSaveSystemPrompt}
+              isEditing={isEditingSystemPrompt}
+              onToggleEdit={toggleSystemPromptEditor}
+              disabled={isLoading}
+            />
+          </div>
+        </div>
       )}
 
       {/* Messages */}
-      <div className="w-full">
-        {messages.map((message, index) => (
-          <ChatMessage
-            key={index}
-            message={message}
-            isLastMessage={index === messages.length - 1}
-          />
-        ))}
-        
-        {/* Inline Loading Indicator - Only show as last message */}
-        {isLoading && (
-          <div className="py-6 px-4 w-full bg-muted/10">
-            <div className="max-w-3xl mx-auto flex gap-4">
-              <div className="flex-shrink-0 mt-0.5">
-                <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center">
-                  <Loader2 className="h-4 w-4 animate-spin text-secondary-foreground" />
-                </div>
-              </div>
-              <div className="flex flex-col flex-1">
-                <div className="font-medium text-sm mb-1">
-                  {currentModel === 'phi3:mini' ? 'Ollama (Phi3)' : 'Assistant'}
-                </div>
-                <div className="text-sm text-muted-foreground flex items-center gap-2">
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                  {currentModel === 'phi3:mini' 
-                    ? 'Local model is generating response...' 
-                    : 'Thinking...'
-                  }
-                </div>
+      {messages.map((message, index) => (
+        <ChatMessage
+          key={`${message.role}-${index}`}
+          message={message}
+          isLastMessage={index === messages.length - 1}
+          onRegenerate={() => handleRegenerate(index)}
+          onRewrite={handleRewrite}
+        />
+      ))}
+
+      {/* Loading Indicator */}
+      {isLoading && (
+        <div className="py-6 px-4 bg-muted/10">
+          <div className="max-w-3xl mx-auto flex gap-4">
+            <div className="flex-shrink-0 mt-0.5">
+              <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center">
+                <div className="w-4 h-4 border-2 border-secondary-foreground border-t-transparent rounded-full animate-spin"></div>
               </div>
             </div>
+            <div className="flex flex-col flex-1">
+              <div className="font-medium text-sm mb-1">{currentModel}</div>
+              <div className="text-muted-foreground text-sm">Thinking...</div>
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      <div ref={messagesEndRef} />
     </div>
   );
 }

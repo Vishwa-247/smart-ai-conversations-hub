@@ -1,21 +1,27 @@
+
 import { Message } from "@/contexts/ChatContext";
 import { useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
-import { User, Bot, FileImage, FileAudio, File as FileIcon, RefreshCcw } from "lucide-react";
+import { User, Bot, FileImage, FileAudio, File as FileIcon, RefreshCcw, Edit, Link, Copy, Check } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import ChatActions from "./ChatActions";
 import gsap from "gsap";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 interface ChatMessageProps {
   message: Message;
   isLastMessage: boolean;
   onRegenerate?: () => void;
+  onRewrite?: (originalMessage: string) => void;
   files?: File[];
 }
 
-export default function ChatMessage({ message, isLastMessage, onRegenerate, files }: ChatMessageProps) {
+export default function ChatMessage({ message, isLastMessage, onRegenerate, onRewrite, files }: ChatMessageProps) {
   const messageRef = useRef<HTMLDivElement>(null);
+  const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
   
   useEffect(() => {
     if (messageRef.current && isLastMessage) {
@@ -36,6 +42,30 @@ export default function ChatMessage({ message, isLastMessage, onRegenerate, file
   const isSystem = message.role === "system";
 
   if (isSystem) return null; // Don't display system messages
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(message.content);
+      setCopied(true);
+      toast({
+        title: "Copied to clipboard",
+        description: "Message content has been copied",
+      });
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      toast({
+        title: "Failed to copy",
+        description: "Could not copy message content",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRewrite = () => {
+    if (onRewrite) {
+      onRewrite(message.content);
+    }
+  };
 
   const renderFileAttachments = () => {
     if (!files || files.length === 0) return null;
@@ -127,7 +157,25 @@ export default function ChatMessage({ message, isLastMessage, onRegenerate, file
               {isUser ? "You" : message.model || "Assistant"}
             </div>
             {!isUser && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleCopy}
+                  className="h-8 px-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  {copied ? <Check className="h-3 w-3 mr-1" /> : <Copy className="h-3 w-3 mr-1" />}
+                  {copied ? "Copied" : "Copy"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleRewrite}
+                  className="h-8 px-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <Edit className="h-3 w-3 mr-1" />
+                  Rewrite
+                </Button>
                 {onRegenerate && (
                   <Button
                     size="sm"

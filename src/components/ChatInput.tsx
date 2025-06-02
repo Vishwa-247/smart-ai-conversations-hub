@@ -1,10 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Send, Plus, FileAudio, FileImage, File, Link } from "lucide-react";
-import { FormEvent, useState, useRef } from "react";
+import { FormEvent, useState, useRef, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { apiClient } from "@/services/apiClient";
 import { FileProcessor } from "@/services/fileProcessor";
+import { UrlContentService } from "@/services/urlContentService";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -19,9 +20,11 @@ import VoiceInput from "./VoiceInput";
 interface ChatInputProps {
   onSend: (message: string, files?: File[]) => void;
   disabled?: boolean;
+  rewriteMessage?: string;
+  onRewriteComplete?: () => void;
 }
 
-export default function ChatInput({ onSend, disabled = false }: ChatInputProps) {
+export default function ChatInput({ onSend, disabled = false, rewriteMessage, onRewriteComplete }: ChatInputProps) {
   const [input, setInput] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [uploadingDocument, setUploadingDocument] = useState(false);
@@ -29,8 +32,23 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
   const [showUrlDialog, setShowUrlDialog] = useState(false);
   const [urlInput, setUrlInput] = useState("");
   const [scrapingUrl, setScrapingUrl] = useState(false);
+  const [isRewriting, setIsRewriting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
+
+  // Handle rewrite message
+  useEffect(() => {
+    if (rewriteMessage) {
+      setIsRewriting(true);
+      setInput(`Please rewrite the following response to make it better, more accurate, or more helpful:\n\n"${rewriteMessage}"\n\nRewritten version:`);
+      // Focus textarea after setting the message
+      setTimeout(() => {
+        textareaRef.current?.focus();
+        textareaRef.current?.setSelectionRange(textareaRef.current.value.length, textareaRef.current.value.length);
+      }, 100);
+    }
+  }, [rewriteMessage]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -70,6 +88,12 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
     onSend(messageContent, files.length > 0 ? files : undefined);
     setInput("");
     setFiles([]);
+    
+    // Handle rewrite completion
+    if (isRewriting) {
+      setIsRewriting(false);
+      onRewriteComplete?.();
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -153,29 +177,26 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
     e.target.value = '';
   };
 
-  const handleUrlScrape = async () => {
+  const handleUrlAnalysis = async () => {
     if (!urlInput.trim()) return;
     
     setScrapingUrl(true);
     try {
-      const response = await apiClient.post('/scrape-url', { url: urlInput });
-      const { title, content } = response.data;
-      
-      const scrapedContent = `URL: ${urlInput}\nTitle: ${title}\n\nContent:\n${content}`;
-      setInput(prev => prev ? `${prev}\n\n${scrapedContent}` : scrapedContent);
+      const content = await UrlContentService.fetchAndSummarize(urlInput);
+      setInput(prev => prev ? `${prev}\n\n${content}` : content);
       
       toast({
-        title: "URL scraped successfully",
-        description: `Content from "${title}" has been added to your message.`,
+        title: "URL content fetched",
+        description: "Content has been added for analysis. Send the message to get a summary.",
       });
       
       setShowUrlDialog(false);
       setUrlInput("");
     } catch (error: any) {
-      console.error('URL scraping error:', error);
+      console.error('URL analysis error:', error);
       toast({
-        title: "URL scraping failed",
-        description: error.response?.data?.detail || "Failed to scrape the URL",
+        title: "URL analysis failed",
+        description: error.message || "Failed to fetch URL content",
         variant: "destructive",
       });
     } finally {
@@ -241,7 +262,8 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
           
           <div className="relative">
             <Textarea
-              placeholder="Type your message here... (Enter to send, Shift+Enter for new line)"
+              ref={textareaRef}
+              placeholder={isRewriting ? "Edit the rewrite request above..." : "Type your message here... (Enter to send, Shift+Enter for new line)"}
               className="resize-none pr-40 min-h-[50px] max-h-[200px] rounded-xl border border-foreground/20 shadow-sm bg-background"
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -283,7 +305,7 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setShowUrlDialog(true)}>
                     <Link className="h-4 w-4 mr-2" />
-                    <span>Scrape URL</span>
+                    <span>Analyze URL</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -301,30 +323,33 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
           </div>
         </div>
         <div className="text-xs text-center mt-2 text-muted-foreground">
-          {processingFiles ? "Processing files..." : uploadingDocument ? "Processing document for AI context..." : "Press Enter to send • Shift+Enter for new line • Upload images (OCR), audio, or documents • Use voice input • Scrape URLs"}
+          {isRewriting ? "Rewriting mode - Edit the prompt above and send" : 
+           processingFiles ? "Processing files..." : 
+           uploadingDocument ? "Processing document for AI context..." : 
+           "Press Enter to send • Shift+Enter for new line • Upload images (OCR), audio, or documents • Use voice input • Analyze URLs"}
         </div>
       </form>
 
-      {/* URL Scraping Dialog */}
+      {/* URL Analysis Dialog */}
       <Dialog open={showUrlDialog} onOpenChange={setShowUrlDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Scrape URL Content</DialogTitle>
+            <DialogTitle>Analyze URL Content</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <Input
-              placeholder="Enter URL to scrape..."
+              placeholder="Enter URL to analyze and summarize..."
               value={urlInput}
               onChange={(e) => setUrlInput(e.target.value)}
               disabled={scrapingUrl}
             />
             <div className="flex gap-2">
               <Button 
-                onClick={handleUrlScrape} 
+                onClick={handleUrlAnalysis} 
                 disabled={!urlInput.trim() || scrapingUrl}
                 className="flex-1"
               >
-                {scrapingUrl ? "Scraping..." : "Scrape Content"}
+                {scrapingUrl ? "Analyzing..." : "Analyze Content"}
               </Button>
               <Button 
                 variant="outline" 

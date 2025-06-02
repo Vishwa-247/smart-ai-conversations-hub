@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import ChatHeader from "@/components/ChatHeader";
 import ChatInput from "@/components/ChatInput";
@@ -10,6 +11,7 @@ import ChatSuggestions from "@/components/ChatSuggestions";
 
 export default function Chat() {
   const { isInitialLoading, currentModel } = useChat();
+  const [rewriteMessage, setRewriteMessage] = useState<string>("");
   const {
     currentChatId,
     currentChat,
@@ -45,6 +47,15 @@ export default function Chat() {
   // Enhanced send handler for system prompt workflow
   const handleSendWithSystemPrompt = (content: string, files?: File[]) => {
     handleSendMessage(content, files);
+  };
+
+  // Handle rewrite functionality
+  const handleRewrite = (messageContent: string) => {
+    setRewriteMessage(messageContent);
+  };
+
+  const handleRewriteComplete = () => {
+    setRewriteMessage("");
   };
   
   // Show loading skeleton while initial data loads
@@ -97,6 +108,7 @@ export default function Chat() {
           showSystemPrompt={showSystemPrompt}
           isLoading={isLoading}
           currentModel={currentModel}
+          onRewrite={handleRewrite}
         />
         
         {/* Show suggestions for new chats */}
@@ -110,7 +122,12 @@ export default function Chat() {
         )}
       </div>
       
-      <ChatInput onSend={handleSendWithSystemPrompt} disabled={isLoading} />
+      <ChatInput 
+        onSend={handleSendWithSystemPrompt} 
+        disabled={isLoading}
+        rewriteMessage={rewriteMessage}
+        onRewriteComplete={handleRewriteComplete}
+      />
     </div>
   );
 }
