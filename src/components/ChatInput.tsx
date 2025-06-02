@@ -4,6 +4,7 @@ import { Send, Plus, FileAudio, FileImage, File, Link } from "lucide-react";
 import { FormEvent, useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { apiClient } from "@/services/apiClient";
+import { FileProcessor } from "@/services/fileProcessor";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -24,18 +25,49 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
   const [input, setInput] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [uploadingDocument, setUploadingDocument] = useState(false);
+  const [processingFiles, setProcessingFiles] = useState(false);
   const [showUrlDialog, setShowUrlDialog] = useState(false);
   const [urlInput, setUrlInput] = useState("");
   const [scrapingUrl, setScrapingUrl] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if ((!input.trim() && files.length === 0) || disabled) return;
     
-    // Send the message with files (they will be shown in the chat message)
-    onSend(input, files.length > 0 ? files : undefined);
+    let messageContent = input;
+    
+    // Process files to extract text content
+    if (files.length > 0) {
+      setProcessingFiles(true);
+      try {
+        const processedContents = await Promise.all(
+          files.map(async (file) => {
+            try {
+              const result = await FileProcessor.processFile(file);
+              return `\n\n[${result.type.toUpperCase()}: ${file.name}]\n${result.content}`;
+            } catch (error) {
+              console.error(`Error processing ${file.name}:`, error);
+              return `\n\n[${file.name}: Processing failed]`;
+            }
+          })
+        );
+        
+        messageContent = input + processedContents.join('');
+      } catch (error) {
+        toast({
+          title: "File processing error",
+          description: "Some files could not be processed",
+          variant: "destructive",
+        });
+      } finally {
+        setProcessingFiles(false);
+      }
+    }
+    
+    // Send the message with processed content
+    onSend(messageContent, files.length > 0 ? files : undefined);
     setInput("");
     setFiles([]);
   };
@@ -111,19 +143,9 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
       if (mediaFiles.length > 0) {
         setFiles(prevFiles => [...prevFiles, ...mediaFiles]);
         
-        // For images, add a more natural analysis prompt
-        const imageFiles = mediaFiles.filter(file => file.type.startsWith('image/'));
-        if (imageFiles.length > 0 && !input.trim()) {
-          const analysisPrompt = imageFiles.length === 1 
-            ? "What do you see in this image?"
-            : `What do you see in these ${imageFiles.length} images?`;
-          
-          setInput(analysisPrompt);
-        }
-        
         toast({
-          title: "Files ready for analysis",
-          description: `${mediaFiles.length} file(s) ready to send`,
+          title: "Files ready for processing",
+          description: `${mediaFiles.length} file(s) will be processed when sent`,
         });
       }
     }
@@ -224,14 +246,14 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              disabled={disabled || uploadingDocument}
+              disabled={disabled || uploadingDocument || processingFiles}
               rows={1}
             />
             
             <div className="absolute right-2 bottom-1.5 flex gap-2">
               <VoiceInput 
                 onTranscript={handleVoiceTranscript}
-                disabled={disabled || uploadingDocument}
+                disabled={disabled || uploadingDocument || processingFiles}
               />
               
               <DropdownMenu>
@@ -240,7 +262,7 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
                     size="icon"
                     variant="ghost"
                     className="h-9 w-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
-                    disabled={disabled || uploadingDocument}
+                    disabled={disabled || uploadingDocument || processingFiles}
                   >
                     <Plus className="h-5 w-5" />
                     <span className="sr-only">Add files</span>
@@ -249,7 +271,7 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => triggerFileInput('image/*')}>
                     <FileImage className="h-4 w-4 mr-2" />
-                    <span>Image</span>
+                    <span>Image (OCR)</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => triggerFileInput('audio/*')}>
                     <FileAudio className="h-4 w-4 mr-2" />
@@ -269,7 +291,7 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
               <Button
                 size="icon"
                 type="submit"
-                disabled={input.trim() === '' && files.length === 0 || disabled || uploadingDocument}
+                disabled={input.trim() === '' && files.length === 0 || disabled || uploadingDocument || processingFiles}
                 className="h-9 w-9 rounded-lg bg-primary hover:bg-primary/90 transition-all"
               >
                 <Send className="h-4 w-4" />
@@ -279,7 +301,7 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
           </div>
         </div>
         <div className="text-xs text-center mt-2 text-muted-foreground">
-          {uploadingDocument ? "Processing document for AI context..." : "Press Enter to send • Shift+Enter for new line • Upload images, audio, or documents • Use voice input • Scrape URLs"}
+          {processingFiles ? "Processing files..." : uploadingDocument ? "Processing document for AI context..." : "Press Enter to send • Shift+Enter for new line • Upload images (OCR), audio, or documents • Use voice input • Scrape URLs"}
         </div>
       </form>
 

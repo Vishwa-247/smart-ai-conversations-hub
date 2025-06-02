@@ -1,8 +1,9 @@
 import { Message } from "@/contexts/ChatContext";
 import { useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
-import { User, Bot, FileImage, FileAudio, File as FileIcon } from "lucide-react";
+import { User, Bot, FileImage, FileAudio, File as FileIcon, RefreshCcw } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import ChatActions from "./ChatActions";
 import gsap from "gsap";
 
@@ -126,11 +127,24 @@ export default function ChatMessage({ message, isLastMessage, onRegenerate, file
               {isUser ? "You" : message.model || "Assistant"}
             </div>
             {!isUser && (
-              <ChatActions 
-                content={message.content}
-                onRegenerate={onRegenerate}
-                chatTitle="Chat Message"
-              />
+              <div className="flex items-center gap-2">
+                {onRegenerate && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={onRegenerate}
+                    className="h-8 px-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <RefreshCcw className="h-3 w-3 mr-1" />
+                    Refresh
+                  </Button>
+                )}
+                <ChatActions 
+                  content={message.content}
+                  onRegenerate={onRegenerate}
+                  chatTitle="Chat Message"
+                />
+              </div>
             )}
           </div>
           
