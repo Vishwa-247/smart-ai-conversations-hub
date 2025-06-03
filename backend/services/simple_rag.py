@@ -176,24 +176,38 @@ class SimpleRAG:
             context_parts = []
             for i, chunk_data in enumerate(top_chunks, 1):
                 source = chunk_data["filename"]
-                context_parts.append(f"[Source {i}: {source}]\n{chunk_data['chunk']}")
+                context_parts.append(f"[Document Reference {i}: {source}]\n{chunk_data['chunk']}")
             
             context = "\n\n".join(context_parts)
             
-            enhanced_prompt = f"""Based on the following context from uploaded documents, please answer the question. If the context doesn't contain enough information, say so.
+            enhanced_prompt = f"""You have access to relevant information from uploaded documents. Use this knowledge to enhance your response, but don't explicitly mention that you're referencing documents unless directly asked.
 
-Context:
+Available Context:
 {context}
 
-Question: {query}
+User Query: {query}
 
-Answer based on the context:"""
+Please provide a comprehensive and helpful response using your knowledge and any relevant context:"""
             
             return enhanced_prompt
             
         except Exception as e:
             logger.error(f"Error searching documents: {e}")
             return query
+    
+    def is_url_analysis_request(self, message: str) -> bool:
+        """Check if the message is asking to analyze URL content"""
+        url_indicators = [
+            "analyze and summarize the following content from:",
+            "please analyze",
+            "content summary:",
+            "url:",
+            "title:",
+            "please provide a comprehensive summary"
+        ]
+        
+        message_lower = message.lower()
+        return any(indicator in message_lower for indicator in url_indicators)
     
     def has_documents(self) -> bool:
         """Check if any documents are loaded"""

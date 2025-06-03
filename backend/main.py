@@ -96,13 +96,13 @@ async def chat(request: MessageRequest):
             
             conversations_cache[conversation_id] = [{
                 "role": "system",
-                "content": system_prompt or "You are a helpful AI assistant."
+                "content": system_prompt or "You are a helpful AI assistant that provides informative, engaging responses with appropriate emojis. Always be comprehensive and knowledgeable in your analysis."
             }]
         elif conversation_id not in conversations_cache:
             # Load conversation history with limit for performance
             messages_db = mongo_db.get_chat_history(conversation_id, limit=20)
             chat_data = mongo_db.get_chat_by_id(conversation_id)
-            system_prompt_content = chat_data.get('system_prompt') if chat_data else "You are a helpful AI assistant."
+            system_prompt_content = chat_data.get('system_prompt') if chat_data else "You are a helpful AI assistant that provides informative, engaging responses with appropriate emojis. Always be comprehensive and knowledgeable in your analysis."
             
             conversations_cache[conversation_id] = [{
                 "role": "system",
@@ -120,9 +120,13 @@ async def chat(request: MessageRequest):
         if len(conversations_cache[conversation_id]) > 16:  # 1 system + 15 messages
             conversations_cache[conversation_id] = [conversations_cache[conversation_id][0]] + conversations_cache[conversation_id][-15:]
         
-        # Check if we have relevant documents
+        # Check if this is URL analysis request
         enhanced_message = message
-        if simple_rag.has_documents():
+        if simple_rag.is_url_analysis_request(message):
+            # For URL analysis, use the message as-is without document context
+            enhanced_message = message
+        elif simple_rag.has_documents():
+            # Only apply document context for regular queries
             enhanced_message = simple_rag.simple_search(message)
         
         # Add user message to conversation
@@ -162,6 +166,8 @@ async def chat(request: MessageRequest):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# ... keep existing code (all other endpoints remain the same)
 
 @app.get("/api/chats")
 async def get_chats():
@@ -248,14 +254,33 @@ async def scrape_url(request: dict):
         import requests
         from bs4 import BeautifulSoup
         
-        response = requests.get(url, timeout=10)
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+        
+        response = requests.get(url, timeout=10, headers=headers)
         soup = BeautifulSoup(response.content, 'html.parser')
         
-        # Extract text content
+        # Extract text content more comprehensively
         title = soup.find('title').get_text() if soup.find('title') else ''
-        paragraphs = [p.get_text().strip() for p in soup.find_all('p') if p.get_text().strip()]
         
-        content = f"Title: {title}\n\n" + "\n\n".join(paragraphs[:10])  # Limit to first 10 paragraphs
+        # Remove script and style elements
+        for script in soup(["script", "style"]):
+            script.decompose()
+        
+        # Get text content
+        text_content = soup.get_text()
+        
+        # Clean up text
+        lines = (line.strip() for line in text_content.splitlines())
+        chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+        clean_text = ' '.join(chunk for chunk in chunks if chunk)
+        
+        # Limit content size
+        if len(clean_text) > 5000:
+            clean_text = clean_text[:5000] + "..."
+        
+        content = f"Title: {title}\n\n{clean_text}"
         
         return {
             "success": True,
