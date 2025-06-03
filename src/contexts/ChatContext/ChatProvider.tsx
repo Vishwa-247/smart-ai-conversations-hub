@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect } from 'react';
 import { apiService } from '@/services/api';
 import { Chat, ChatContextType, Message, ModelType } from '@/types/chat';
@@ -185,6 +184,24 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Update a specific message in a chat
+  const updateMessage = (chatId: string, messageIndex: number, updatedMessage: Message) => {
+    setChats((prev) => {
+      return prev.map((chat) => {
+        if (chat.id === chatId) {
+          const updatedMessages = [...chat.messages];
+          updatedMessages[messageIndex] = updatedMessage;
+          return {
+            ...chat,
+            messages: updatedMessages,
+            updatedAt: new Date(),
+          };
+        }
+        return chat;
+      });
+    });
+  };
+
   // Delete a chat
   const deleteChat = async (id: string) => {
     try {
@@ -247,6 +264,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     createChat,
     selectChat,
     addMessage,
+    updateMessage,
     deleteChat,
     isLoading,
     setIsLoading,

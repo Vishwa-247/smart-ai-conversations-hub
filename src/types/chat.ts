@@ -27,6 +27,7 @@ export interface ChatContextType {
   createChat: (model: ModelType, systemPrompt?: string) => void;
   selectChat: (id: string) => void;
   addMessage: (chatId: string, message: Omit<Message, 'id' | 'timestamp'>) => void;
+  updateMessage: (chatId: string, messageIndex: number, updatedMessage: Message) => void;
   deleteChat: (id: string) => Promise<void>;
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
