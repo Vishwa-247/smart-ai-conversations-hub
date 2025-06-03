@@ -70,7 +70,6 @@ export default function ChatMessageList({
               onSave={handleSaveSystemPrompt}
               isEditing={isEditingSystemPrompt}
               toggleEdit={toggleSystemPromptEditor}
-              disabled={isLoading}
             />
           </div>
         </div>
