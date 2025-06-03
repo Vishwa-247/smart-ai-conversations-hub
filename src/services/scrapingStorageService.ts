@@ -22,7 +22,14 @@ export class ScrapingStorageService {
     const existingContent = this.getAllScrapedContent();
     existingContent.push(scrapedContent);
     
+    // Log for debugging
+    console.log('Saving scraped content:', scrapedContent);
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(existingContent));
+    
+    // Verify it was saved
+    const saved = this.getAllScrapedContent();
+    console.log('All scraped content after save:', saved);
+    
     return id;
   }
 
@@ -31,7 +38,12 @@ export class ScrapingStorageService {
     if (!stored) return [];
     
     try {
-      return JSON.parse(stored);
+      const parsed = JSON.parse(stored);
+      // Convert timestamp strings back to Date objects
+      return parsed.map((item: any) => ({
+        ...item,
+        timestamp: new Date(item.timestamp)
+      }));
     } catch {
       return [];
     }

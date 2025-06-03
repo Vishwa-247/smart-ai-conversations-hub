@@ -9,7 +9,7 @@ import { useChat } from "@/contexts/ChatContext";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Chat() {
-  const { isInitialLoading, currentModel } = useChat();
+  const { isInitialLoading, currentModel, updateMessage } = useChat();
   const [rewriteMessage, setRewriteMessage] = useState<string>("");
   const {
     currentChatId,
@@ -57,15 +57,25 @@ export default function Chat() {
     setRewriteMessage("");
   };
 
-  // Handle regeneration
+  // Handle regeneration - replace the last AI message instead of creating new one
   const handleRegenerate = (messageIndex: number) => {
     if (!currentChat || !currentChatId) return;
     
     // Find the user message that prompted this AI response
     const userMessage = currentChat.messages[messageIndex - 1];
     if (userMessage && userMessage.role === "user") {
-      // Resend the user message to generate a new response
-      handleSendMessage(userMessage.content);
+      // Mark the AI message for replacement by setting a flag
+      const aiMessage = currentChat.messages[messageIndex];
+      if (aiMessage && aiMessage.role === "assistant") {
+        // Update the AI message to show it's being regenerated
+        updateMessage(currentChatId, messageIndex, {
+          ...aiMessage,
+          content: "🔄 Regenerating response...",
+        });
+        
+        // Resend the user message to generate a new response
+        handleSendMessage(userMessage.content);
+      }
     }
   };
   
