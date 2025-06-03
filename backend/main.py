@@ -56,17 +56,21 @@ class SaveMessageRequest(BaseModel):
     role: str
     content: str
 
+class GenerateTitleRequest(BaseModel):
+    content: str
+    model: str = "groq-llama"
+
 @app.get("/api/health")
 async def health_check():
     return {"status": "ok", "message": "AI Chat API is running"}
 
 @app.post("/api/upload-document")
-async def upload_document(file: UploadFile = File(...)):
+async def upload_document(file: UploadFile = File(...), chat_id: str = Form(...)):
     try:
         file_content = await file.read()
         
-        # Process document with Simple RAG
-        result = simple_rag.process_document(file_content, file.filename)
+        # Process document with Simple RAG for specific chat
+        result = simple_rag.process_document(file_content, file.filename, chat_id)
         
         return {
             "success": True,
@@ -77,6 +81,37 @@ async def upload_document(file: UploadFile = File(...)):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/generate-title")
+async def generate_title(request: GenerateTitleRequest):
+    try:
+        # Create a simple conversation for title generation
+        messages = [
+            {
+                "role": "system",
+                "content": "Generate a short, descriptive title (max 6 words) for this conversation. Only return the title, nothing else."
+            },
+            {
+                "role": "user", 
+                "content": f"Generate a title for this content: {request.content[:200]}..."
+            }
+        ]
+        
+        if request.model == 'groq-llama':
+            title = ask_groq(messages)
+        else:
+            title = ask_gemini(messages)
+        
+        # Clean up the title
+        title = title.strip().replace('"', '').replace("'", "")
+        if len(title) > 50:
+            title = title[:47] + "..."
+            
+        return {"title": title}
+        
+    except Exception as e:
+        logger.error(f"Error generating title: {e}")
+        return {"title": "New Chat"}
 
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(request: MessageRequest):
@@ -125,9 +160,9 @@ async def chat(request: MessageRequest):
         if simple_rag.is_url_analysis_request(message):
             # For URL analysis, use the message as-is without document context
             enhanced_message = message
-        elif simple_rag.has_documents():
-            # Only apply document context for regular queries
-            enhanced_message = simple_rag.simple_search(message)
+        elif simple_rag.has_documents(conversation_id):
+            # Only apply document context for regular queries and specific chat
+            enhanced_message = simple_rag.simple_search(message, conversation_id)
         
         # Add user message to conversation
         conversations_cache[conversation_id].append({
@@ -138,15 +173,19 @@ async def chat(request: MessageRequest):
         # Save user message to database
         mongo_db.save_message(conversation_id, "user", message)
         
-        # Generate response based on model
-        if model == 'gemini-2.0-flash':
-            response_text = ask_gemini(conversations_cache[conversation_id])
-        elif model == 'groq-llama':
-            response_text = ask_groq(conversations_cache[conversation_id])
-        elif model == 'phi3:mini':
-            response_text = ask_ollama(conversations_cache[conversation_id], model)
-        else:
-            response_text = ask_gemini(conversations_cache[conversation_id])  # Default fallback
+        # Generate response based on model with proper error handling
+        try:
+            if model == 'gemini-2.0-flash':
+                response_text = ask_gemini(conversations_cache[conversation_id])
+            elif model == 'groq-llama':
+                response_text = ask_groq(conversations_cache[conversation_id])
+            elif model == 'phi3:mini':
+                response_text = ask_ollama(conversations_cache[conversation_id], model)
+            else:
+                response_text = ask_gemini(conversations_cache[conversation_id])  # Default fallback
+        except Exception as model_error:
+            logger.error(f"Model {model} error: {model_error}")
+            raise HTTPException(status_code=500, detail=f"Model {model} is currently unavailable. Please try again or switch to a different model.")
         
         # Add assistant response to conversation
         conversations_cache[conversation_id].append({
@@ -235,10 +274,18 @@ async def update_system_prompt(chat_id: str, request: dict):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/documents")
-async def get_uploaded_documents():
+async def get_uploaded_documents(chat_id: str = None):
     try:
-        documents = simple_rag.get_document_list()
+        documents = simple_rag.get_document_list(chat_id)
         return {"documents": documents}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/documents/{filename}")
+async def delete_document(filename: str, chat_id: str = None):
+    try:
+        success = simple_rag.delete_document(filename, chat_id)
+        return {"success": success}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

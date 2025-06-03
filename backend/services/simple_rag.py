@@ -16,7 +16,8 @@ class SimpleRAG:
         self.documents_dir = Path("documents")
         self.documents_dir.mkdir(exist_ok=True)
         self.documents_metadata = []
-        self.document_chunks = {}
+        # Store documents per chat
+        self.chat_documents = {}  # chat_id -> {file_id: document_data}
         
     def save_file(self, file_content: bytes, filename: str) -> str:
         """Save uploaded file and return file path"""
@@ -103,8 +104,8 @@ class SimpleRAG:
         
         return chunks
     
-    def process_document(self, file_content: bytes, filename: str) -> Dict[str, Any]:
-        """Process a document and store it"""
+    def process_document(self, file_content: bytes, filename: str, chat_id: str = None) -> Dict[str, Any]:
+        """Process a document and store it for a specific chat"""
         try:
             file_path = self.save_file(file_content, filename)
             text = self.extract_text(file_path)
@@ -115,23 +116,30 @@ class SimpleRAG:
             chunks = self.chunk_text(text)
             file_id = hashlib.md5(file_content).hexdigest()[:10]
             
-            # Store chunks in memory
-            self.document_chunks[file_id] = {
-                "filename": filename,
-                "chunks": chunks,
-                "full_text": text
-            }
+            # Store document for specific chat
+            if chat_id:
+                if chat_id not in self.chat_documents:
+                    self.chat_documents[chat_id] = {}
+                
+                self.chat_documents[chat_id][file_id] = {
+                    "filename": filename,
+                    "chunks": chunks,
+                    "full_text": text,
+                    "upload_time": str(datetime.now()),
+                    "file_path": file_path
+                }
             
-            # Update metadata
+            # Update global metadata
             self.documents_metadata.append({
                 "id": file_id,
                 "filename": filename,
                 "file_path": file_path,
                 "chunks": len(chunks),
-                "upload_time": str(datetime.now())
+                "upload_time": str(datetime.now()),
+                "chat_id": chat_id
             })
             
-            logger.info(f"Processed document {filename} with {len(chunks)} chunks")
+            logger.info(f"Processed document {filename} with {len(chunks)} chunks for chat {chat_id}")
             
             return {
                 "filename": filename,
@@ -144,16 +152,16 @@ class SimpleRAG:
             logger.error(f"Error processing document {filename}: {e}")
             raise Exception(f"Document processing failed: {str(e)}")
     
-    def simple_search(self, query: str, top_k: int = 3) -> str:
-        """Simple keyword-based search through documents"""
-        if not self.document_chunks:
+    def simple_search(self, query: str, chat_id: str = None, top_k: int = 3) -> str:
+        """Simple keyword-based search through documents for a specific chat"""
+        if not chat_id or chat_id not in self.chat_documents or not self.chat_documents[chat_id]:
             return query
         
         try:
             query_words = query.lower().split()
             relevant_chunks = []
             
-            for file_id, doc_data in self.document_chunks.items():
+            for file_id, doc_data in self.chat_documents[chat_id].items():
                 for chunk in doc_data["chunks"]:
                     chunk_lower = chunk.lower()
                     score = sum(1 for word in query_words if word in chunk_lower)
@@ -180,14 +188,14 @@ class SimpleRAG:
             
             context = "\n\n".join(context_parts)
             
-            enhanced_prompt = f"""You have access to relevant information from uploaded documents. Use this knowledge to enhance your response, but don't explicitly mention that you're referencing documents unless directly asked.
+            enhanced_prompt = f"""You have access to relevant information from uploaded documents. Use this knowledge naturally in your response.
 
 Available Context:
 {context}
 
 User Query: {query}
 
-Please provide a comprehensive and helpful response using your knowledge and any relevant context:"""
+Please provide a comprehensive and helpful response:"""
             
             return enhanced_prompt
             
@@ -209,10 +217,55 @@ Please provide a comprehensive and helpful response using your knowledge and any
         message_lower = message.lower()
         return any(indicator in message_lower for indicator in url_indicators)
     
-    def has_documents(self) -> bool:
-        """Check if any documents are loaded"""
-        return len(self.document_chunks) > 0
+    def has_documents(self, chat_id: str = None) -> bool:
+        """Check if any documents are loaded for a specific chat"""
+        if not chat_id:
+            return len(self.documents_metadata) > 0
+        return chat_id in self.chat_documents and len(self.chat_documents[chat_id]) > 0
     
-    def get_document_list(self) -> List[Dict]:
-        """Get list of uploaded documents"""
-        return self.documents_metadata
+    def get_document_list(self, chat_id: str = None) -> List[Dict]:
+        """Get list of uploaded documents for a specific chat"""
+        if not chat_id:
+            return self.documents_metadata
+        
+        if chat_id not in self.chat_documents:
+            return []
+        
+        return [
+            {
+                "id": file_id,
+                "filename": doc_data["filename"],
+                "file_path": doc_data.get("file_path", ""),
+                "chunks": len(doc_data["chunks"]),
+                "upload_time": doc_data["upload_time"]
+            }
+            for file_id, doc_data in self.chat_documents[chat_id].items()
+        ]
+    
+    def delete_document(self, filename: str, chat_id: str = None) -> bool:
+        """Delete a document from a specific chat"""
+        try:
+            if chat_id and chat_id in self.chat_documents:
+                # Find and remove from chat documents
+                file_id_to_remove = None
+                for file_id, doc_data in self.chat_documents[chat_id].items():
+                    if doc_data["filename"] == filename:
+                        file_id_to_remove = file_id
+                        break
+                
+                if file_id_to_remove:
+                    del self.chat_documents[chat_id][file_id_to_remove]
+                    
+                    # Remove from global metadata
+                    self.documents_metadata = [
+                        doc for doc in self.documents_metadata 
+                        if not (doc["filename"] == filename and doc.get("chat_id") == chat_id)
+                    ]
+                    
+                    logger.info(f"Deleted document {filename} from chat {chat_id}")
+                    return True
+            
+            return False
+        except Exception as e:
+            logger.error(f"Error deleting document {filename}: {e}")
+            return False

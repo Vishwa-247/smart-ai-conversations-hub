@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect } from 'react';
 import { apiService } from '@/services/api';
 import { Chat, ChatContextType, Message, ModelType } from '@/types/chat';
@@ -74,6 +75,28 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Generate title for chat based on content
+  const generateChatTitle = async (content: string, model: ModelType): Promise<string> => {
+    try {
+      const response = await fetch('/api/generate-title', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content,
+          model
+        }),
+      });
+      
+      const data = await response.json();
+      return data.title || 'New Chat';
+    } catch (error) {
+      console.error('Failed to generate title:', error);
+      return content.slice(0, 30) + (content.length > 30 ? '...' : '');
+    }
+  };
+
   // Create a new chat with the specified model and save to backend immediately
   const createChat = async (model: ModelType, systemPrompt?: string) => {
     try {
@@ -128,13 +151,21 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           return prev.map((chat) => {
             if (chat.id === chatId) {
               const shouldUpdateTitle = chat.title === 'New Chat' && message.role === 'user' && chat.messages.length === 0;
-              const newTitle = shouldUpdateTitle ? message.content.slice(0, 30) + (message.content.length > 30 ? '...' : '') : chat.title;
               
               const newMessage: Message = {
                 ...message,
                 id: Date.now().toString(),
                 timestamp: new Date(),
               };
+              
+              // Generate new title if needed
+              if (shouldUpdateTitle) {
+                generateChatTitle(message.content, chat.model).then(newTitle => {
+                  setChats(prevChats => prevChats.map(c => 
+                    c.id === chatId ? { ...c, title: newTitle } : c
+                  ));
+                });
+              }
               
               // Save to backend
               if (message.role === 'user' || message.role === 'assistant') {
@@ -143,7 +174,6 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
               
               return {
                 ...chat,
-                title: newTitle,
                 messages: [...chat.messages, newMessage],
                 updatedAt: new Date(),
               };
