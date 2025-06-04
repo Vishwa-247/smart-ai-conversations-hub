@@ -58,6 +58,35 @@ class ModelRouter:
             "complexity_level": "high" if complexity_score >= 4 else "medium" if complexity_score >= 2 else "low"
         }
     
+    def analyze_search_need(self, query: str) -> Dict[str, any]:
+        """Analyze if query needs web search"""
+        search_indicators = [
+            'latest', 'recent', 'current', 'today', 'now', 'breaking',
+            'weather', 'stock', 'price', 'news', 'trending', 'happening'
+        ]
+        
+        query_lower = query.lower()
+        search_score = sum(1 for indicator in search_indicators if indicator in query_lower)
+        
+        # Check for real-time question patterns
+        realtime_patterns = [
+            'what is the current',
+            'latest news',
+            'today\'s weather',
+            'stock price',
+            'how much does',
+            'when did'
+        ]
+        
+        pattern_match = any(pattern in query_lower for pattern in realtime_patterns)
+        
+        return {
+            "needs_search": search_score > 0 or pattern_match,
+            "search_score": search_score,
+            "pattern_match": pattern_match,
+            "reasoning": f"Search indicators: {search_score}, Pattern match: {pattern_match}"
+        }
+    
     def get_system_resources(self) -> Dict[str, any]:
         """Get current system resource usage"""
         try:
@@ -93,31 +122,52 @@ class ModelRouter:
             print(f"Error getting system resources: {e}")
             return {"cpu_percent": 50, "memory_percent": 50, "memory_available_gb": 8}
     
-    def select_model(self, query: str, has_rag_context: bool = False) -> Dict[str, any]:
+    def select_model(self, query: str, has_rag_context: bool = False, needs_web_search: bool = False) -> Dict[str, any]:
         """Select the best model for the query - simplified to always use Phi model"""
+        complexity = self.analyze_query_complexity(query)
+        search_analysis = self.analyze_search_need(query)
+        
+        reasoning_parts = []
+        
+        if needs_web_search or search_analysis["needs_search"]:
+            reasoning_parts.append("Query requires real-time information")
+        
+        if has_rag_context:
+            reasoning_parts.append("Enhanced with document context")
+        
+        if complexity["complexity_level"] == "high":
+            reasoning_parts.append("High complexity query detected")
+        
+        reasoning = ", ".join(reasoning_parts) if reasoning_parts else "Standard query processing"
+        
         # Always use local Phi model for simplicity
         if self.ollama_service.is_available():
             return {
                 "type": "local",
                 "model": "phi3:mini",
                 "service": "ollama",
-                "reasoning": "Using local Phi model for RAG-enhanced response"
+                "reasoning": f"Using local Phi model - {reasoning}",
+                "complexity": complexity,
+                "search_analysis": search_analysis
             }
         else:
             return {
                 "type": "local",
                 "model": "phi3:mini", 
                 "service": "ollama",
-                "reasoning": "Ollama service not available - please ensure Ollama is running with phi3:mini model"
+                "reasoning": "Ollama service not available - please ensure Ollama is running with phi3:mini model",
+                "complexity": complexity,
+                "search_analysis": search_analysis
             }
     
-    def log_performance(self, model_info: Dict, response_time: float, success: bool):
+    def log_performance(self, model_info: Dict, response_time: float, success: bool, used_web_search: bool = False):
         """Log model performance for future optimization"""
         performance_data = {
             "timestamp": time.time(),
             "model": model_info,
             "response_time": response_time,
-            "success": success
+            "success": success,
+            "used_web_search": used_web_search
         }
         
         self.performance_history.append(performance_data)
@@ -132,19 +182,26 @@ class ModelRouter:
             return {
                 "total_requests": 0,
                 "local_requests": 0,
-                "cloud_requests": 0
+                "cloud_requests": 0,
+                "web_search_requests": 0
             }
         
         local_performances = [p for p in self.performance_history if p["model"]["type"] == "local"]
+        web_search_requests = [p for p in self.performance_history if p.get("used_web_search", False)]
         
         stats = {
             "total_requests": len(self.performance_history),
             "local_requests": len(local_performances),
-            "cloud_requests": 0  # No cloud requests in simplified version
+            "cloud_requests": 0,  # No cloud requests in simplified version
+            "web_search_requests": len(web_search_requests)
         }
         
         if local_performances:
             stats["local_avg_time"] = sum(p["response_time"] for p in local_performances) / len(local_performances)
             stats["local_success_rate"] = sum(1 for p in local_performances if p["success"]) / len(local_performances)
+        
+        if web_search_requests:
+            stats["web_search_avg_time"] = sum(p["response_time"] for p in web_search_requests) / len(web_search_requests)
+            stats["web_search_success_rate"] = sum(1 for p in web_search_requests if p["success"]) / len(web_search_requests)
         
         return stats

@@ -10,3 +10,5 @@ pydantic==1.10.12
 PyPDF2==3.0.1
 python-docx==0.8.11
 mammoth==1.6.0
+beautifulsoup4==4.12.2
+psutil==5.9.0

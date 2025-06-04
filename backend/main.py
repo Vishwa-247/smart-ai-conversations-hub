@@ -7,15 +7,22 @@ import os
 import time
 from datetime import datetime
 import json
+import logging
 
 # Import services
 from services.gemini_service import ask_gemini
 from services.groq_service import ask_groq
 from services.ollama_service import ask_ollama
 from services.simple_rag import SimpleRAG
+from services.web_search_service import WebSearchService
+from services.model_router import ModelRouter
 
 # Import MongoDB client
 from database.mongodb import MongoDB
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="AI Chat Application", version="1.0")
 
@@ -31,9 +38,11 @@ app.add_middleware(
 # Initialize services
 mongo_db = MongoDB()
 simple_rag = SimpleRAG()
+web_search = WebSearchService()
+model_router = ModelRouter()
 conversations_cache = {}
 
-# Define request and response models
+# ... keep existing code (request/response models remain the same)
 class MessageRequest(BaseModel):
     model: str
     message: str
@@ -60,9 +69,22 @@ class GenerateTitleRequest(BaseModel):
     content: str
     model: str = "groq-llama"
 
+class WebSearchRequest(BaseModel):
+    query: str
+    max_results: Optional[int] = 5
+
 @app.get("/api/health")
 async def health_check():
     return {"status": "ok", "message": "AI Chat API is running"}
+
+@app.post("/api/web-search")
+async def web_search_endpoint(request: WebSearchRequest):
+    """Endpoint for manual web search"""
+    try:
+        search_results = web_search.search(request.query, request.max_results)
+        return search_results
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/upload-document")
 async def upload_document(file: UploadFile = File(...), chat_id: str = Form(...)):
@@ -120,6 +142,9 @@ async def chat(request: MessageRequest):
     system_prompt = request.system_prompt
     model = request.model
     
+    start_time = time.time()
+    used_web_search = False
+    
     try:
         # Create conversation if it doesn't exist
         if not conversation_id:
@@ -155,23 +180,53 @@ async def chat(request: MessageRequest):
         if len(conversations_cache[conversation_id]) > 16:  # 1 system + 15 messages
             conversations_cache[conversation_id] = [conversations_cache[conversation_id][0]] + conversations_cache[conversation_id][-15:]
         
-        # Check if this is URL analysis request
+        # Determine if we need web search
+        needs_web_search = simple_rag.should_trigger_web_search(message)
+        has_documents = simple_rag.has_documents(conversation_id)
+        
+        # Enhanced message processing
         enhanced_message = message
+        web_search_results = ""
+        
+        # Handle different types of queries
         if simple_rag.is_url_analysis_request(message):
-            # For URL analysis, use the message as-is without document context
+            # For URL analysis, use the message as-is without additional context
             enhanced_message = message
-        elif simple_rag.has_documents(conversation_id):
-            # Only apply document context for regular queries and specific chat
+        elif needs_web_search and has_documents:
+            # Combine web search with document context
+            logger.info(f"🔄 Combining web search with document context for query: {message}")
+            search_data = web_search.search(message, max_results=3)
+            if search_data.get('success'):
+                web_search_results = web_search.format_search_results(search_data)
+                used_web_search = True
+            
+            document_context = simple_rag.simple_search(message, conversation_id)
+            enhanced_message = simple_rag.combine_sources(message, document_context, web_search_results, conversation_id)
+        elif needs_web_search:
+            # Only web search
+            logger.info(f"🔍 Triggering web search for query: {message}")
+            search_data = web_search.search(message, max_results=5)
+            if search_data.get('success'):
+                web_search_results = web_search.format_search_results(search_data)
+                enhanced_message = simple_rag.enhance_with_web_search(message, web_search_results)
+                used_web_search = True
+            else:
+                logger.warning("Web search failed, using original query")
+        elif has_documents:
+            # Only document context
             enhanced_message = simple_rag.simple_search(message, conversation_id)
         
-        # Add user message to conversation
+        # Add user message to conversation (use original message for storage)
         conversations_cache[conversation_id].append({
             "role": "user",
             "content": enhanced_message
         })
         
-        # Save user message to database
+        # Save original user message to database
         mongo_db.save_message(conversation_id, "user", message)
+        
+        # Select model and get response
+        model_selection = model_router.select_model(message, has_documents, needs_web_search)
         
         # Generate response based on model with proper error handling
         try:
@@ -183,8 +238,16 @@ async def chat(request: MessageRequest):
                 response_text = ask_ollama(conversations_cache[conversation_id], model)
             else:
                 response_text = ask_gemini(conversations_cache[conversation_id])  # Default fallback
+                
+            # Log performance
+            response_time = time.time() - start_time
+            model_router.log_performance(model_selection, response_time, True, used_web_search)
+            
         except Exception as model_error:
             logger.error(f"Model {model} error: {model_error}")
+            # Log failed performance
+            response_time = time.time() - start_time
+            model_router.log_performance(model_selection, response_time, False, used_web_search)
             raise HTTPException(status_code=500, detail=f"Model {model} is currently unavailable. Please try again or switch to a different model.")
         
         # Add assistant response to conversation
@@ -196,6 +259,10 @@ async def chat(request: MessageRequest):
         # Save assistant response to database
         mongo_db.save_message(conversation_id, "assistant", response_text)
         
+        # Add search indicator to response if web search was used
+        if used_web_search:
+            logger.info(f"✅ Response generated with web search for conversation {conversation_id}")
+        
         return {
             "role": "assistant",
             "content": response_text,
@@ -204,10 +271,14 @@ async def chat(request: MessageRequest):
         }
         
     except Exception as e:
+        logger.error(f"Chat error: {e}")
+        # Log failed performance
+        response_time = time.time() - start_time
+        if 'model_selection' in locals():
+            model_router.log_performance(model_selection, response_time, False, used_web_search)
         raise HTTPException(status_code=500, detail=str(e))
 
 # ... keep existing code (all other endpoints remain the same)
-
 @app.get("/api/chats")
 async def get_chats():
     try:
@@ -289,7 +360,15 @@ async def delete_document(filename: str, chat_id: str = None):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# New endpoint for URL scraping
+@app.get("/api/performance-stats")
+async def get_performance_stats():
+    """Get model performance statistics including web search usage"""
+    try:
+        stats = model_router.get_performance_stats()
+        return stats
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/api/scrape-url")
 async def scrape_url(request: dict):
     try:

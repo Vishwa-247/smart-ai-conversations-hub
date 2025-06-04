@@ -8,6 +8,7 @@ import PyPDF2
 import docx
 import mammoth
 from datetime import datetime
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +20,33 @@ class SimpleRAG:
         # Store documents per chat
         self.chat_documents = {}  # chat_id -> {file_id: document_data}
         
+        # Web search trigger keywords
+        self.search_triggers = [
+            # Time-sensitive keywords
+            'latest', 'recent', 'current', 'today', 'now', 'this week', 'this month',
+            'yesterday', 'breaking', 'update', 'news', 'new', 'fresh',
+            
+            # Real-time data keywords
+            'weather', 'stock price', 'exchange rate', 'cryptocurrency', 'bitcoin',
+            'market', 'price', 'cost', 'temperature', 'forecast',
+            
+            # Current events keywords
+            'happening', 'events', 'trending', 'viral', 'popular',
+            
+            # Comparative keywords that might need current data
+            'vs', 'versus', 'compare', 'comparison', 'better', 'best',
+            
+            # Question words that often need real-time answers
+            'what is the', 'how much', 'when did', 'who is', 'where is'
+        ]
+        
+        # Keywords that should NOT trigger search (document-focused)
+        self.no_search_keywords = [
+            'document', 'file', 'upload', 'analyze this', 'summarize this',
+            'from the document', 'in the pdf', 'according to the file'
+        ]
+    
+    # ... keep existing code (save_file, extract_text methods remain the same)
     def save_file(self, file_content: bytes, filename: str) -> str:
         """Save uploaded file and return file path"""
         file_hash = hashlib.md5(file_content).hexdigest()[:10]
@@ -152,6 +180,39 @@ class SimpleRAG:
             logger.error(f"Error processing document {filename}: {e}")
             raise Exception(f"Document processing failed: {str(e)}")
     
+    def should_trigger_web_search(self, query: str) -> bool:
+        """Determine if a query should trigger web search"""
+        query_lower = query.lower()
+        
+        # Don't search if it's clearly about documents
+        for keyword in self.no_search_keywords:
+            if keyword in query_lower:
+                return False
+        
+        # Check for search trigger keywords
+        for trigger in self.search_triggers:
+            if trigger in query_lower:
+                logger.info(f"🔍 Web search triggered by keyword: '{trigger}'")
+                return True
+        
+        # Check for question patterns that often need real-time data
+        question_patterns = [
+            r'what.*is.*price',
+            r'how.*much.*cost',
+            r'when.*did.*happen',
+            r'who.*is.*currently',
+            r'where.*is.*now',
+            r'what.*happened.*today',
+            r'latest.*on',
+        ]
+        
+        for pattern in question_patterns:
+            if re.search(pattern, query_lower):
+                logger.info(f"🔍 Web search triggered by pattern: '{pattern}'")
+                return True
+        
+        return False
+    
     def simple_search(self, query: str, chat_id: str = None, top_k: int = 3) -> str:
         """Simple keyword-based search through documents for a specific chat"""
         if not chat_id or chat_id not in self.chat_documents or not self.chat_documents[chat_id]:
@@ -203,6 +264,57 @@ Please provide a comprehensive and helpful response:"""
             logger.error(f"Error searching documents: {e}")
             return query
     
+    def enhance_with_web_search(self, query: str, web_search_results: str) -> str:
+        """Enhance query with web search results"""
+        if not web_search_results:
+            return query
+        
+        enhanced_prompt = f"""You have access to current web search results. Use this information to provide an up-to-date and comprehensive response.
+
+Current Web Information:
+{web_search_results}
+
+User Query: {query}
+
+Please provide a comprehensive response using the latest information available:"""
+        
+        return enhanced_prompt
+    
+    def combine_sources(self, query: str, document_context: str, web_search_results: str, chat_id: str = None) -> str:
+        """Combine document context with web search results"""
+        sources = []
+        
+        # Add document context if available
+        if chat_id and self.has_documents(chat_id):
+            doc_context = self.simple_search(query, chat_id)
+            if doc_context != query:  # If document context was found
+                sources.append("Document Knowledge Base")
+        
+        # Add web search results if available
+        if web_search_results:
+            sources.append("Current Web Information")
+        
+        if not sources:
+            return query
+        
+        # Build combined prompt
+        combined_prompt = f"""You have access to multiple information sources. Use all available information to provide a comprehensive response.
+
+"""
+        
+        if document_context and document_context != query:
+            combined_prompt += f"Document Context:\n{document_context}\n\n"
+        
+        if web_search_results:
+            combined_prompt += f"Current Web Information:\n{web_search_results}\n\n"
+        
+        combined_prompt += f"""User Query: {query}
+
+Please provide a comprehensive response using all available sources:"""
+        
+        return combined_prompt
+    
+    # ... keep existing code (is_url_analysis_request, has_documents, get_document_list, delete_document methods remain the same)
     def is_url_analysis_request(self, message: str) -> bool:
         """Check if the message is asking to analyze URL content"""
         url_indicators = [
