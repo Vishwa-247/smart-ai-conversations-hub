@@ -91,15 +91,76 @@ class WebSearchService:
             logger.error(f"Web fallback search error: {e}")
             return []
     
+    def search_weather_api(self, location: str) -> List[Dict]:
+        """Specific weather search using multiple sources"""
+        try:
+            # Try weather-specific search
+            weather_query = f"current weather {location} today temperature"
+            search_url = f"https://html.duckduckgo.com/html/?q={quote_plus(weather_query)}"
+            
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+            
+            response = requests.get(search_url, headers=headers, timeout=self.timeout)
+            soup = BeautifulSoup(response.content, 'html.parser')
+            
+            results = []
+            
+            # Look for weather-specific results
+            result_divs = soup.find_all('div', class_='result')[:5]
+            
+            for div in result_divs:
+                title_elem = div.find('a', class_='result__a')
+                snippet_elem = div.find('a', class_='result__snippet')
+                
+                if title_elem and snippet_elem:
+                    title = title_elem.get_text(strip=True)
+                    snippet = snippet_elem.get_text(strip=True)
+                    url = title_elem.get('href', '')
+                    
+                    # Filter for weather-related results
+                    if any(word in title.lower() or word in snippet.lower() 
+                           for word in ['weather', 'temperature', 'forecast', 'climate']):
+                        results.append({
+                            'title': title,
+                            'snippet': snippet,
+                            'url': url,
+                            'source': 'weather_search'
+                        })
+            
+            return results[:3]
+            
+        except Exception as e:
+            logger.error(f"Weather search error: {e}")
+            return []
+    
     def search(self, query: str, max_results: int = 5) -> Dict:
         """Main search function that tries multiple methods"""
         try:
             logger.info(f"🔍 Searching for: {query}")
             
-            # Try DuckDuckGo API first
-            results = self.search_duckduckgo(query, max_results)
+            # Check if it's a weather query
+            query_lower = query.lower()
+            is_weather = any(word in query_lower for word in ['weather', 'temperature', 'forecast', 'climate'])
             
-            # If no results, try fallback method
+            results = []
+            
+            if is_weather:
+                # Extract location if possible
+                location = "current location"
+                for city in ['hyderabad', 'mumbai', 'delhi', 'bangalore', 'chennai', 'kolkata']:
+                    if city in query_lower:
+                        location = city
+                        break
+                
+                results = self.search_weather_api(location)
+            
+            # If no weather results or not weather query, try general search
+            if not results:
+                results = self.search_duckduckgo(query, max_results)
+            
+            # If still no results, try fallback method
             if not results:
                 logger.info("Trying fallback search method...")
                 results = self.search_web_fallback(query, max_results)
@@ -110,7 +171,8 @@ class WebSearchService:
                     'success': True,
                     'query': query,
                     'results': results,
-                    'timestamp': time.time()
+                    'timestamp': time.time(),
+                    'used_agent': True  # Mark as agent response
                 }
             else:
                 logger.warning("No search results found")
@@ -118,7 +180,8 @@ class WebSearchService:
                     'success': False,
                     'query': query,
                     'results': [],
-                    'error': 'No results found'
+                    'error': 'No results found',
+                    'used_agent': False
                 }
                 
         except Exception as e:
@@ -127,7 +190,8 @@ class WebSearchService:
                 'success': False,
                 'query': query,
                 'results': [],
-                'error': str(e)
+                'error': str(e),
+                'used_agent': False
             }
     
     def format_search_results(self, search_data: Dict) -> str:

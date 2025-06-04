@@ -20,24 +20,26 @@ class SimpleRAG:
         # Store documents per chat
         self.chat_documents = {}  # chat_id -> {file_id: document_data}
         
-        # Web search trigger keywords
+        # Enhanced web search trigger keywords
         self.search_triggers = [
             # Time-sensitive keywords
             'latest', 'recent', 'current', 'today', 'now', 'this week', 'this month',
-            'yesterday', 'breaking', 'update', 'news', 'new', 'fresh',
+            'yesterday', 'breaking', 'update', 'news', 'new', 'fresh', 'live',
+            
+            # Weather keywords
+            'weather', 'temperature', 'forecast', 'climate', 'rain', 'sunny', 'cloudy',
+            'humidity', 'wind', 'storm', 'hot', 'cold', 'degrees',
             
             # Real-time data keywords
-            'weather', 'stock price', 'exchange rate', 'cryptocurrency', 'bitcoin',
-            'market', 'price', 'cost', 'temperature', 'forecast',
+            'stock price', 'exchange rate', 'cryptocurrency', 'bitcoin', 'price',
+            'market', 'cost', 'trending', 'viral', 'popular',
             
             # Current events keywords
-            'happening', 'events', 'trending', 'viral', 'popular',
-            
-            # Comparative keywords that might need current data
-            'vs', 'versus', 'compare', 'comparison', 'better', 'best',
+            'happening', 'events', 'breaking news',
             
             # Question words that often need real-time answers
-            'what is the', 'how much', 'when did', 'who is', 'where is'
+            'what is the current', 'how much does', 'when did', 'who is currently',
+            'where is now', 'what happened today', 'tell me the current'
         ]
         
         # Keywords that should NOT trigger search (document-focused)
@@ -46,7 +48,7 @@ class SimpleRAG:
             'from the document', 'in the pdf', 'according to the file'
         ]
     
-    # ... keep existing code (save_file, extract_text methods remain the same)
+    # ... keep existing code (file processing methods remain the same)
     def save_file(self, file_content: bytes, filename: str) -> str:
         """Save uploaded file and return file path"""
         file_hash = hashlib.md5(file_content).hexdigest()[:10]
@@ -181,12 +183,13 @@ class SimpleRAG:
             raise Exception(f"Document processing failed: {str(e)}")
     
     def should_trigger_web_search(self, query: str) -> bool:
-        """Determine if a query should trigger web search"""
+        """Enhanced determination if a query should trigger web search"""
         query_lower = query.lower()
         
         # Don't search if it's clearly about documents
         for keyword in self.no_search_keywords:
             if keyword in query_lower:
+                logger.info(f"🚫 Web search disabled by document keyword: '{keyword}'")
                 return False
         
         # Check for search trigger keywords
@@ -195,7 +198,23 @@ class SimpleRAG:
                 logger.info(f"🔍 Web search triggered by keyword: '{trigger}'")
                 return True
         
-        # Check for question patterns that often need real-time data
+        # Enhanced weather detection patterns
+        weather_patterns = [
+            r'weather.*in.*',
+            r'temperature.*in.*',
+            r'how.*hot.*today',
+            r'how.*cold.*today',
+            r'rain.*today',
+            r'forecast.*for.*',
+            r'climate.*in.*'
+        ]
+        
+        for pattern in weather_patterns:
+            if re.search(pattern, query_lower):
+                logger.info(f"🌤️ Weather search triggered by pattern: '{pattern}'")
+                return True
+        
+        # Enhanced question patterns that often need real-time data
         question_patterns = [
             r'what.*is.*price',
             r'how.*much.*cost',
@@ -204,15 +223,24 @@ class SimpleRAG:
             r'where.*is.*now',
             r'what.*happened.*today',
             r'latest.*on',
+            r'current.*weather',
+            r'tell.*me.*current',
+            r'what.*is.*the.*current'
         ]
         
         for pattern in question_patterns:
             if re.search(pattern, query_lower):
-                logger.info(f"🔍 Web search triggered by pattern: '{pattern}'")
+                logger.info(f"🔍 Web search triggered by question pattern: '{pattern}'")
                 return True
+        
+        # Check for direct weather requests
+        if any(word in query_lower for word in ['weather', 'temperature', 'forecast', 'climate']):
+            logger.info(f"🌤️ Web search triggered by weather keywords")
+            return True
         
         return False
     
+    # ... keep existing code (remaining methods stay the same)
     def simple_search(self, query: str, chat_id: str = None, top_k: int = 3) -> str:
         """Simple keyword-based search through documents for a specific chat"""
         if not chat_id or chat_id not in self.chat_documents or not self.chat_documents[chat_id]:
@@ -276,7 +304,9 @@ Current Web Information:
 
 User Query: {query}
 
-Please provide a comprehensive response using the latest information available:"""
+Please provide a comprehensive response using the latest information available. Note: This response includes real-time data from web search (🤖 Agent Response).
+
+Please provide your response:"""
         
         return enhanced_prompt
     
@@ -310,11 +340,12 @@ Please provide a comprehensive response using the latest information available:"
         
         combined_prompt += f"""User Query: {query}
 
+Note: This response combines document analysis with real-time web data (🤖 Agent Response).
+
 Please provide a comprehensive response using all available sources:"""
         
         return combined_prompt
     
-    # ... keep existing code (is_url_analysis_request, has_documents, get_document_list, delete_document methods remain the same)
     def is_url_analysis_request(self, message: str) -> bool:
         """Check if the message is asking to analyze URL content"""
         url_indicators = [

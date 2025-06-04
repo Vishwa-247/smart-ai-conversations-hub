@@ -54,6 +54,7 @@ class ChatResponse(BaseModel):
     content: str
     conversation_id: str
     model_used: Optional[str] = None
+    agent_response: Optional[bool] = False
 
 class CreateChatRequest(BaseModel):
     id: str
@@ -111,11 +112,11 @@ async def generate_title(request: GenerateTitleRequest):
         messages = [
             {
                 "role": "system",
-                "content": "Generate a short, descriptive title (max 6 words) for this conversation. Only return the title, nothing else."
+                "content": "Generate a very short, descriptive title (3-4 words max) for this conversation. Only return the title, nothing else. Be concise and specific."
             },
             {
                 "role": "user", 
-                "content": f"Generate a title for this content: {request.content[:200]}..."
+                "content": f"Generate a short title for this content: {request.content[:150]}..."
             }
         ]
         
@@ -124,10 +125,14 @@ async def generate_title(request: GenerateTitleRequest):
         else:
             title = ask_gemini(messages)
         
-        # Clean up the title
+        # Clean up the title and make it shorter
         title = title.strip().replace('"', '').replace("'", "")
-        if len(title) > 50:
-            title = title[:47] + "..."
+        # Split into words and take only first 4
+        words = title.split()[:4]
+        title = " ".join(words)
+        
+        if len(title) > 30:
+            title = title[:27] + "..."
             
         return {"title": title}
         
@@ -144,6 +149,7 @@ async def chat(request: MessageRequest):
     
     start_time = time.time()
     used_web_search = False
+    agent_response = False
     
     try:
         # Create conversation if it doesn't exist
@@ -180,9 +186,11 @@ async def chat(request: MessageRequest):
         if len(conversations_cache[conversation_id]) > 16:  # 1 system + 15 messages
             conversations_cache[conversation_id] = [conversations_cache[conversation_id][0]] + conversations_cache[conversation_id][-15:]
         
-        # Determine if we need web search
+        # Enhanced web search trigger detection
         needs_web_search = simple_rag.should_trigger_web_search(message)
         has_documents = simple_rag.has_documents(conversation_id)
+        
+        logger.info(f"🔍 Query analysis - Needs search: {needs_web_search}, Has docs: {has_documents}")
         
         # Enhanced message processing
         enhanced_message = message
@@ -199,6 +207,7 @@ async def chat(request: MessageRequest):
             if search_data.get('success'):
                 web_search_results = web_search.format_search_results(search_data)
                 used_web_search = True
+                agent_response = search_data.get('used_agent', False)
             
             document_context = simple_rag.simple_search(message, conversation_id)
             enhanced_message = simple_rag.combine_sources(message, document_context, web_search_results, conversation_id)
@@ -210,6 +219,8 @@ async def chat(request: MessageRequest):
                 web_search_results = web_search.format_search_results(search_data)
                 enhanced_message = simple_rag.enhance_with_web_search(message, web_search_results)
                 used_web_search = True
+                agent_response = search_data.get('used_agent', False)
+                logger.info(f"✅ Web search successful, agent_response: {agent_response}")
             else:
                 logger.warning("Web search failed, using original query")
         elif has_documents:
@@ -239,6 +250,10 @@ async def chat(request: MessageRequest):
             else:
                 response_text = ask_gemini(conversations_cache[conversation_id])  # Default fallback
                 
+            # Add agent indicator if web search was used
+            if used_web_search and agent_response:
+                response_text = response_text + "\n\n🤖 *This response includes real-time information from web search.*"
+                
             # Log performance
             response_time = time.time() - start_time
             model_router.log_performance(model_selection, response_time, True, used_web_search)
@@ -267,7 +282,8 @@ async def chat(request: MessageRequest):
             "role": "assistant",
             "content": response_text,
             "conversation_id": conversation_id,
-            "model_used": model
+            "model_used": model,
+            "agent_response": agent_response or used_web_search
         }
         
     except Exception as e:
