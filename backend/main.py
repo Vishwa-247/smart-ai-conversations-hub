@@ -1,4 +1,3 @@
-
 from fastapi import FastAPI, File, Form, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -12,7 +11,6 @@ import logging
 # Import services
 from services.gemini_service import ask_gemini
 from services.groq_service import ask_groq
-from services.ollama_service import ask_ollama
 from services.simple_rag import SimpleRAG
 from services.web_search_service import WebSearchService
 from services.model_router import ModelRouter
@@ -42,7 +40,6 @@ web_search = WebSearchService()
 model_router = ModelRouter()
 conversations_cache = {}
 
-# ... keep existing code (request/response models remain the same)
 class MessageRequest(BaseModel):
     model: str
     message: str
@@ -73,6 +70,19 @@ class GenerateTitleRequest(BaseModel):
 class WebSearchRequest(BaseModel):
     query: str
     max_results: Optional[int] = 5
+
+# Helper function to handle ollama requests
+def handle_ollama_request(messages, model="phi3:mini"):
+    """Handle ollama requests with proper error handling"""
+    try:
+        from services.ollama_service import ask_ollama
+        return ask_ollama(messages, model)
+    except ImportError:
+        logger.error("Ollama service not available")
+        return "Ollama service is not configured or available. Please use Gemini or Groq models instead."
+    except Exception as e:
+        logger.error(f"Error with Ollama service: {e}")
+        return f"Error communicating with Ollama: {str(e)}"
 
 @app.get("/api/health")
 async def health_check():
@@ -246,7 +256,7 @@ async def chat(request: MessageRequest):
             elif model == 'groq-llama':
                 response_text = ask_groq(conversations_cache[conversation_id])
             elif model == 'phi3:mini':
-                response_text = ask_ollama(conversations_cache[conversation_id], model)
+                response_text = handle_ollama_request(conversations_cache[conversation_id], model)
             else:
                 response_text = ask_gemini(conversations_cache[conversation_id])  # Default fallback
                 
@@ -294,7 +304,6 @@ async def chat(request: MessageRequest):
             model_router.log_performance(model_selection, response_time, False, used_web_search)
         raise HTTPException(status_code=500, detail=str(e))
 
-# ... keep existing code (all other endpoints remain the same)
 @app.get("/api/chats")
 async def get_chats():
     try:
