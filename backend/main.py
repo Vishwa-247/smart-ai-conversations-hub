@@ -1,3 +1,4 @@
+
 from fastapi import FastAPI, File, Form, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -246,9 +247,6 @@ async def chat(request: MessageRequest):
         # Save original user message to database
         mongo_db.save_message(conversation_id, "user", message)
         
-        # Select model and get response
-        model_selection = model_router.select_model(message, has_documents, needs_web_search)
-        
         # Generate response based on model with proper error handling
         try:
             if model == 'gemini-2.0-flash':
@@ -264,15 +262,13 @@ async def chat(request: MessageRequest):
             if used_web_search and agent_response:
                 response_text = response_text + "\n\n🤖 *This response includes real-time information from web search.*"
                 
-            # Log performance
+            # Log performance (simplified without model selection)
             response_time = time.time() - start_time
-            model_router.log_performance(model_selection, response_time, True, used_web_search)
+            logger.info(f"✅ Response generated in {response_time:.2f}s with model {model}")
             
         except Exception as model_error:
             logger.error(f"Model {model} error: {model_error}")
-            # Log failed performance
             response_time = time.time() - start_time
-            model_router.log_performance(model_selection, response_time, False, used_web_search)
             raise HTTPException(status_code=500, detail=f"Model {model} is currently unavailable. Please try again or switch to a different model.")
         
         # Add assistant response to conversation
@@ -298,10 +294,7 @@ async def chat(request: MessageRequest):
         
     except Exception as e:
         logger.error(f"Chat error: {e}")
-        # Log failed performance
         response_time = time.time() - start_time
-        if 'model_selection' in locals():
-            model_router.log_performance(model_selection, response_time, False, used_web_search)
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/chats")
