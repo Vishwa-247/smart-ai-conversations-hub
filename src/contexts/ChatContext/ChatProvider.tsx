@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect } from 'react';
 import { apiService } from '@/services/api';
 import { Chat, ChatContextType, Message, ModelType } from '@/types/chat';
@@ -78,19 +77,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   // Generate title for chat based on content
   const generateChatTitle = async (content: string, model: ModelType): Promise<string> => {
     try {
-      const response = await fetch('/api/generate-title', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          content,
-          model
-        }),
-      });
-      
-      const data = await response.json();
-      return data.title || 'New Chat';
+      const response = await apiService.generateTitle(content, model);
+      return response.title || 'New Chat';
     } catch (error) {
       console.error('Failed to generate title:', error);
       return content.slice(0, 30) + (content.length > 30 ? '...' : '');
@@ -112,7 +100,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       };
       
       // Save to backend immediately to ensure persistence
-      await apiService.createChat(newChatId, 'New Chat', model, systemPrompt);
+      await apiService.createChat(model, 'New Chat', systemPrompt);
       
       setChats((prev) => [newChat, ...prev]);
       setCurrentChatId(newChatId);
@@ -200,7 +188,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           };
           
           // Save to backend
-          apiService.createChat(chatId, title, currentModel).catch(console.error);
+          apiService.createChat(currentModel, title).catch(console.error);
           if (message.role === 'user' || message.role === 'assistant') {
             apiService.saveMessage(chatId, message.role, message.content).catch(console.error);
           }

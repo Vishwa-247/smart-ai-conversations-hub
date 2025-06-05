@@ -115,6 +115,25 @@ class ApiService {
     return response.json();
   }
 
+  async saveMessage(chatId: string, role: string, content: string) {
+    const response = await fetch(`${API_BASE_URL}/chats/${chatId}/messages`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        role,
+        content,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to save message");
+    }
+
+    return response.json();
+  }
+
   async generateTitle(content: string, model: string = "groq-llama") {
     const response = await fetch(`${API_BASE_URL}/generate-title`, {
       method: "POST",
