@@ -76,11 +76,67 @@ class WebSearchRequest(BaseModel):
 def handle_ollama_request(messages, model="phi3:mini"):
     """Handle ollama requests with proper error handling"""
     try:
-        from services.ollama_service import ask_ollama
-        return ask_ollama(messages, model)
-    except ImportError:
-        logger.error("Ollama service not available")
-        return "Ollama service is not configured or available. Please use Gemini or Groq models instead."
+        # Import and use ollama service
+        import requests
+        import json
+        
+        OLLAMA_BASE_URL = "http://localhost:11434"
+        
+        # Check if Ollama is running
+        try:
+            response = requests.get(f"{OLLAMA_BASE_URL}/api/version", timeout=5)
+            if response.status_code != 200:
+                return "Ollama service is not running. Please start Ollama and ensure the phi3:mini model is installed."
+        except requests.exceptions.RequestException:
+            return "Ollama service is not running. Please start Ollama and ensure the phi3:mini model is installed."
+        
+        # Format messages for Ollama
+        formatted_messages = []
+        for msg in messages:
+            formatted_messages.append({
+                "role": msg["role"],
+                "content": msg["content"]
+            })
+        
+        # Optimized request payload
+        payload = {
+            "model": model,
+            "messages": formatted_messages,
+            "stream": False,
+            "options": {
+                "temperature": 0.7,
+                "top_p": 0.9,
+                "top_k": 40,
+                "num_ctx": 2048,
+                "num_predict": 512,
+                "repeat_penalty": 1.1,
+            }
+        }
+        
+        logger.info(f"Sending request to Ollama with model: {model}")
+        
+        # Make request with timeout
+        response = requests.post(
+            f"{OLLAMA_BASE_URL}/api/chat",
+            json=payload,
+            timeout=60,
+            headers={"Content-Type": "application/json"}
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            if "message" in result and "content" in result["message"]:
+                content = result["message"]["content"]
+                logger.info(f"Received response from Ollama: {len(content)} characters")
+                return content
+            else:
+                logger.error(f"Unexpected response format from Ollama: {result}")
+                return "Received unexpected response format from Ollama"
+        else:
+            error_msg = f"Ollama request failed with status {response.status_code}: {response.text}"
+            logger.error(error_msg)
+            return error_msg
+            
     except Exception as e:
         logger.error(f"Error with Ollama service: {e}")
         return f"Error communicating with Ollama: {str(e)}"

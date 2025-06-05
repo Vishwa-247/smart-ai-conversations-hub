@@ -72,7 +72,9 @@ class ApiService {
       throw new Error("Failed to fetch chats");
     }
 
-    return response.json();
+    const data = await response.json();
+    // Return the chats array directly from the response
+    return data.chats || [];
   }
 
   async getChatHistory(chatId: string, limit = 50) {
@@ -82,7 +84,9 @@ class ApiService {
       throw new Error("Failed to fetch chat history");
     }
 
-    return response.json();
+    const data = await response.json();
+    // Return the messages array directly from the response
+    return data.messages || [];
   }
 
   async deleteChat(chatId: string) {

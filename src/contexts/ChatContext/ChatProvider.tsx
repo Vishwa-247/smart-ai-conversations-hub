@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect } from 'react';
 import { apiService } from '@/services/api';
 import { Chat, ChatContextType, Message, ModelType } from '@/types/chat';
@@ -32,8 +33,17 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         setChats(formattedChats);
         console.log(`Loaded ${formattedChats.length} chats from backend`);
         
-        // DO NOT auto-select any chat - let user choose
-        setCurrentChatId(null);
+        // Try to restore the last selected chat from localStorage
+        const lastChatId = localStorage.getItem('lastSelectedChatId');
+        if (lastChatId && formattedChats.find(chat => chat.id === lastChatId)) {
+          setCurrentChatId(lastChatId);
+          const chat = formattedChats.find(c => c.id === lastChatId);
+          if (chat) {
+            setCurrentModel(chat.model);
+            // Load messages for the restored chat
+            await loadChatMessages(lastChatId);
+          }
+        }
         
       } catch (error) {
         console.error('Failed to load chats:', error);
@@ -45,6 +55,15 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
     loadChats();
   }, []);
+
+  // Save current chat ID to localStorage when it changes
+  useEffect(() => {
+    if (currentChatId) {
+      localStorage.setItem('lastSelectedChatId', currentChatId);
+    } else {
+      localStorage.removeItem('lastSelectedChatId');
+    }
+  }, [currentChatId]);
 
   // Load messages for a specific chat
   const loadChatMessages = async (chatId: string) => {
@@ -155,7 +174,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
                 });
               }
               
-              // Save to backend
+              // Save to backend - use the correct API method
               if (message.role === 'user' || message.role === 'assistant') {
                 apiService.saveMessage(chatId, message.role, message.content).catch(console.error);
               }
