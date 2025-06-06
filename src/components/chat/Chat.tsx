@@ -7,6 +7,9 @@ import ChatMessageList from "./ChatMessageList";
 import EmptyChat from "./EmptyChat";
 import { useChat } from "@/contexts/ChatContext";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { useSidebar } from "@/contexts/SidebarContext";
+import { Menu } from "lucide-react";
 
 export default function Chat() {
   const { isInitialLoading, currentModel, updateMessage } = useChat();
@@ -101,14 +104,17 @@ export default function Chat() {
   if (!currentChatId) {
     return (
       <div className="flex h-screen flex-col w-full">
-        <EmptyChat
-          systemPrompt={systemPrompt}
-          setSystemPrompt={setSystemPrompt}
-          onSendMessage={handleSendWithSystemPrompt}
-          isLoading={isLoading}
-          showSystemPrompt={true}
-          isRequired={false}
-        />
+        <EmptyHeaderWithToggle />
+        <div className="flex-1">
+          <EmptyChat
+            systemPrompt={systemPrompt}
+            setSystemPrompt={setSystemPrompt}
+            onSendMessage={handleSendWithSystemPrompt}
+            isLoading={isLoading}
+            showSystemPrompt={true}
+            isRequired={false}
+          />
+        </div>
       </div>
     );
   }
@@ -144,5 +150,22 @@ export default function Chat() {
         />
       </div>
     </div>
+  );
+}
+
+// Simple header component for empty chat state with sidebar toggle
+function EmptyHeaderWithToggle() {
+  const { toggle } = useSidebar();
+  
+  return (
+    <header className="sticky top-0 z-10 flex items-center justify-between border-b bg-background/95 p-4 backdrop-blur">
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" size="icon" onClick={toggle}>
+          <Menu className="h-5 w-5" />
+          <span className="sr-only">Toggle sidebar</span>
+        </Button>
+        <h1 className="text-lg font-medium">AI Chat Assistant</h1>
+      </div>
+    </header>
   );
 }
