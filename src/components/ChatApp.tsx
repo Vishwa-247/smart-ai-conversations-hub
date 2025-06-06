@@ -24,7 +24,9 @@ function ChatAppContent() {
       <ChatSidebar />
       
       <div className={`flex-1 flex flex-col min-w-0 ${isMobile && isOpen ? 'overflow-hidden' : ''}`}>
-        <Chat />
+        <div className="w-full h-full">
+          <Chat />
+        </div>
       </div>
     </div>
   );
@@ -35,7 +37,9 @@ export default function ChatApp() {
     <ThemeProvider>
       <SidebarProvider>
         <ChatProvider>
-          <ChatAppContent />
+          <div className="min-h-screen w-full">
+            <ChatAppContent />
+          </div>
         </ChatProvider>
       </SidebarProvider>
     </ThemeProvider>

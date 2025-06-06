@@ -100,22 +100,26 @@ export default function Chat() {
   
   if (!currentChatId) {
     return (
-      <EmptyChat
-        systemPrompt={systemPrompt}
-        setSystemPrompt={setSystemPrompt}
-        onSendMessage={handleSendWithSystemPrompt}
-        isLoading={isLoading}
-        showSystemPrompt={true}
-        isRequired={false}
-      />
+      <div className="flex h-screen flex-col w-full">
+        <EmptyChat
+          systemPrompt={systemPrompt}
+          setSystemPrompt={setSystemPrompt}
+          onSendMessage={handleSendWithSystemPrompt}
+          isLoading={isLoading}
+          showSystemPrompt={true}
+          isRequired={false}
+        />
+      </div>
     );
   }
 
   return (
-    <div className="flex h-screen flex-col">
-      <ChatHeader />
+    <div className="flex h-screen flex-col w-full">
+      <div className="flex-shrink-0">
+        <ChatHeader />
+      </div>
       
-      <div className="flex-1 overflow-y-auto custom-scrollbar">
+      <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
         <ChatMessageList
           messages={currentChat?.messages || []}
           systemPrompt={systemPrompt}
@@ -131,12 +135,14 @@ export default function Chat() {
         />
       </div>
       
-      <ChatInput 
-        onSend={handleSendWithSystemPrompt} 
-        disabled={isLoading}
-        rewriteMessage={rewriteMessage}
-        onRewriteComplete={handleRewriteComplete}
-      />
+      <div className="flex-shrink-0">
+        <ChatInput 
+          onSend={handleSendWithSystemPrompt} 
+          disabled={isLoading}
+          rewriteMessage={rewriteMessage}
+          onRewriteComplete={handleRewriteComplete}
+        />
+      </div>
     </div>
   );
 }

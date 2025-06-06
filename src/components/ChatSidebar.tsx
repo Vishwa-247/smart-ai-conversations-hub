@@ -61,19 +61,19 @@ export default function ChatSidebar() {
       ref={sidebarRef} 
       className={`${
         isMobile 
-          ? 'fixed inset-y-0 left-0 z-50 w-80 max-w-[85vw]' 
+          ? 'fixed inset-y-0 left-0 z-50 w-72 max-w-[80vw]' 
           : 'w-64'
       } border-r h-screen flex flex-col bg-sidebar text-sidebar-foreground rounded-r-xl overflow-hidden border-sidebar-border/30`}
     >
       {/* Header Section */}
       <div className="flex-shrink-0">
-        {/* Home Button - Now at top */}
+        {/* Home Button - At top */}
         <div className="p-3 border-b border-sidebar-border/30">
           <Button 
             variant="ghost" 
             size="sm" 
             onClick={handleHomeClick} 
-            className="w-full font-medium text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent/10 rounded-xl py-3 justify-center"
+            className="w-full font-medium text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent/10 rounded-xl py-3 justify-center text-sm"
           >
             🏠 Home
           </Button>
@@ -83,7 +83,7 @@ export default function ChatSidebar() {
         <div className="p-3 border-b border-sidebar-border/30">
           <Button 
             onClick={handleCreateChat} 
-            className="w-full flex items-center justify-center gap-2 animate-fade-in rounded-xl py-3 border border-sidebar-border/30 bg-sidebar-accent/10 hover:bg-foreground/5 transition-all duration-300" 
+            className="w-full flex items-center justify-center gap-2 animate-fade-in rounded-xl py-3 border border-sidebar-border/30 bg-sidebar-accent/10 hover:bg-foreground/5 transition-all duration-300 text-sm" 
             variant="outline"
           >
             <PlusCircle className="h-4 w-4" />
@@ -106,7 +106,7 @@ export default function ChatSidebar() {
         <div className="p-3" ref={listRef}>
           <h2 className="text-sm font-medium mb-3 truncate">Chat History</h2>
           {chats.length === 0 && (
-            <div className="text-sm text-sidebar-foreground/70 py-4 text-center px-2">
+            <div className="text-xs text-sidebar-foreground/70 py-4 text-center px-2">
               No conversations yet
             </div>
           )}
