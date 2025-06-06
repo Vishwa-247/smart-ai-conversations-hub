@@ -66,7 +66,7 @@ export default function ChatSidebarItem({
 
   return (
     <div
-      className={`group flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-all duration-300 hover:bg-foreground/10 cursor-pointer ${
+      className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-300 hover:bg-foreground/10 cursor-pointer ${
         isSelected ? "bg-foreground/10" : ""
       }`}
       onClick={onClick}
@@ -78,15 +78,15 @@ export default function ChatSidebarItem({
       >
         {getModelIcon(chat.model)}
       </div>
-      <div className="flex-1 truncate">
-        <div className="font-medium">{chat.title}</div>
-        <div className="text-xs text-muted-foreground">
+      <div className="flex-1 min-w-0">
+        <div className="font-medium truncate">{chat.title}</div>
+        <div className="text-xs text-muted-foreground truncate">
           {formatDistanceToNow(new Date(chat.updatedAt), { addSuffix: true })}
         </div>
       </div>
       <button
         onClick={handleDeleteClick}
-        className="opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+        className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-1 hover:bg-destructive/10 rounded flex-shrink-0"
         aria-label="Delete chat"
       >
         <Trash className="h-4 w-4 text-muted-foreground hover:text-destructive" />

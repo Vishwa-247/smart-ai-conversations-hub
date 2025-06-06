@@ -60,66 +60,73 @@ export default function ChatSidebar() {
     <div 
       ref={sidebarRef} 
       className={`${
-        isMobile ? 'fixed inset-y-0 left-0 z-50 w-72' : 'w-64'
+        isMobile 
+          ? 'fixed inset-y-0 left-0 z-50 w-80 max-w-[85vw]' 
+          : 'w-64'
       } border-r h-screen flex flex-col bg-sidebar text-sidebar-foreground rounded-r-xl overflow-hidden border-sidebar-border/30`}
     >
-      {/* Home Button - Now at top */}
-      <div className="p-3 border-b border-sidebar-border/30">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={handleHomeClick} 
-          className="w-full font-medium text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent/10 rounded-xl py-3"
-        >
-          🏠 Home
-        </Button>
-      </div>
-
-      {/* New Chat Button */}
-      <div className="p-3">
-        <Button 
-          onClick={handleCreateChat} 
-          className="w-full flex items-center justify-center gap-2 animate-fade-in rounded-xl py-3 border border-sidebar-border/30 bg-sidebar-accent/10 hover:bg-foreground/5 transition-all duration-300" 
-          variant="outline"
-        >
-          <PlusCircle className="h-4 w-4" />
-          New Chat
-        </Button>
-      </div>
-      
-      {/* Model Selector */}
-      <div className="p-2 mt-1">
-        <div className="flex items-center justify-between px-3 py-1">
-          <h2 className="text-sm font-medium">Models</h2>
-          <ModelInfo />
+      {/* Header Section */}
+      <div className="flex-shrink-0">
+        {/* Home Button - Now at top */}
+        <div className="p-3 border-b border-sidebar-border/30">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleHomeClick} 
+            className="w-full font-medium text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent/10 rounded-xl py-3 justify-center"
+          >
+            🏠 Home
+          </Button>
         </div>
-        <ModelSelector />
+
+        {/* New Chat Button */}
+        <div className="p-3 border-b border-sidebar-border/30">
+          <Button 
+            onClick={handleCreateChat} 
+            className="w-full flex items-center justify-center gap-2 animate-fade-in rounded-xl py-3 border border-sidebar-border/30 bg-sidebar-accent/10 hover:bg-foreground/5 transition-all duration-300" 
+            variant="outline"
+          >
+            <PlusCircle className="h-4 w-4" />
+            <span className="truncate">New Chat</span>
+          </Button>
+        </div>
+        
+        {/* Model Selector */}
+        <div className="p-3 border-b border-sidebar-border/30">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-sm font-medium truncate">Models</h2>
+            <ModelInfo />
+          </div>
+          <ModelSelector />
+        </div>
       </div>
       
-      {/* Chat History */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar">
-        <div className="px-2 py-1" ref={listRef}>
-          <h2 className="text-sm font-medium pl-3 mb-1">Chat History</h2>
+      {/* Chat History - Scrollable */}
+      <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
+        <div className="p-3" ref={listRef}>
+          <h2 className="text-sm font-medium mb-3 truncate">Chat History</h2>
           {chats.length === 0 && (
-            <div className="text-sm text-sidebar-foreground/70 py-2 text-center px-2">
+            <div className="text-sm text-sidebar-foreground/70 py-4 text-center px-2">
               No conversations yet
             </div>
           )}
           
-          {chats.map(chat => (
-            <ChatSidebarItem 
-              key={chat.id} 
-              chat={chat} 
-              isSelected={chat.id === currentChatId} 
-              onClick={() => selectChat(chat.id)} 
-              onDelete={() => deleteChat(chat.id)} 
-            />
-          ))}
+          <div className="space-y-1">
+            {chats.map(chat => (
+              <ChatSidebarItem 
+                key={chat.id} 
+                chat={chat} 
+                isSelected={chat.id === currentChatId} 
+                onClick={() => selectChat(chat.id)} 
+                onDelete={() => deleteChat(chat.id)} 
+              />
+            ))}
+          </div>
         </div>
       </div>
       
       {/* Footer with Theme Selector */}
-      <div className="p-3 border-t flex items-center justify-end bg-sidebar-accent/5 border-sidebar-border/30 rounded-b-xl">
+      <div className="flex-shrink-0 p-3 border-t flex items-center justify-center bg-sidebar-accent/5 border-sidebar-border/30">
         <ThemeSelector />
       </div>
     </div>

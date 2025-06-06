@@ -12,7 +12,7 @@ function ChatAppContent() {
   const { isOpen, close } = useSidebar();
 
   return (
-    <div className="flex min-h-screen w-full relative">
+    <div className="flex min-h-screen w-full relative overflow-hidden">
       {/* Mobile Overlay */}
       {isMobile && isOpen && (
         <div 
@@ -23,7 +23,7 @@ function ChatAppContent() {
       
       <ChatSidebar />
       
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className={`flex-1 flex flex-col min-w-0 ${isMobile && isOpen ? 'overflow-hidden' : ''}`}>
         <Chat />
       </div>
     </div>
