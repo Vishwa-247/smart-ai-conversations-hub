@@ -11,21 +11,20 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<ThemeType>('dark');
+  const [theme, setTheme] = useState<ThemeType>('light'); // Changed default to light
 
   useEffect(() => {
     const storedTheme = localStorage.getItem('theme') as ThemeType | null;
     
-    // Check for stored theme or system preference
+    // Check for stored theme first, then default to light
     if (storedTheme && ['dark', 'light', 'forest'].includes(storedTheme)) {
       setTheme(storedTheme);
-    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      setTheme('dark');
+    } else {
+      setTheme('light'); // Default to light instead of checking system preference
     }
   }, []);
 
   useEffect(() => {
-    // Update the data theme attribute and store in localStorage
     const root = window.document.documentElement;
     
     root.classList.remove('light', 'dark', 'forest', 'cyberpunk', 'ocean');

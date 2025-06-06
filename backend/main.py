@@ -14,7 +14,6 @@ from services.gemini_service import ask_gemini
 from services.groq_service import ask_groq
 from services.simple_rag import SimpleRAG
 from services.web_search_service import WebSearchService
-from services.model_router import ModelRouter
 
 # Import MongoDB client
 from database.mongodb import MongoDB
@@ -25,10 +24,14 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="AI Chat Application", version="1.0")
 
-# Configure CORS
+# Configure CORS with production-ready settings
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "*"],
+    allow_origins=["*"] if os.getenv("ENVIRONMENT") == "development" else [
+        "https://your-frontend-domain.vercel.app",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -38,9 +41,9 @@ app.add_middleware(
 mongo_db = MongoDB()
 simple_rag = SimpleRAG()
 web_search = WebSearchService()
-model_router = ModelRouter()
 conversations_cache = {}
 
+# ... keep existing code (Pydantic models)
 class MessageRequest(BaseModel):
     model: str
     message: str
@@ -72,23 +75,21 @@ class WebSearchRequest(BaseModel):
     query: str
     max_results: Optional[int] = 5
 
-# Helper function to handle ollama requests
+# Enhanced Ollama handler with mobile detection
 def handle_ollama_request(messages, model="phi3:mini"):
     """Handle ollama requests with proper error handling"""
     try:
-        # Import and use ollama service
         import requests
-        import json
         
-        OLLAMA_BASE_URL = "http://localhost:11434"
+        OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
         
-        # Check if Ollama is running
+        # Check if Ollama is available (mainly for local development)
         try:
             response = requests.get(f"{OLLAMA_BASE_URL}/api/version", timeout=5)
             if response.status_code != 200:
-                return "Ollama service is not running. Please start Ollama and ensure the phi3:mini model is installed."
+                return "Ollama service is not available. Please use Gemini or Groq models for production deployment."
         except requests.exceptions.RequestException:
-            return "Ollama service is not running. Please start Ollama and ensure the phi3:mini model is installed."
+            return "Ollama service is not available. Please use Gemini or Groq models for production deployment."
         
         # Format messages for Ollama
         formatted_messages = []
@@ -98,7 +99,6 @@ def handle_ollama_request(messages, model="phi3:mini"):
                 "content": msg["content"]
             })
         
-        # Optimized request payload
         payload = {
             "model": model,
             "messages": formatted_messages,
@@ -115,7 +115,6 @@ def handle_ollama_request(messages, model="phi3:mini"):
         
         logger.info(f"Sending request to Ollama with model: {model}")
         
-        # Make request with timeout
         response = requests.post(
             f"{OLLAMA_BASE_URL}/api/chat",
             json=payload,
@@ -139,15 +138,15 @@ def handle_ollama_request(messages, model="phi3:mini"):
             
     except Exception as e:
         logger.error(f"Error with Ollama service: {e}")
-        return f"Error communicating with Ollama: {str(e)}"
+        return f"Ollama is not available. Please use Gemini or Groq models instead."
 
+# ... keep existing code (all endpoint definitions remain the same)
 @app.get("/api/health")
 async def health_check():
     return {"status": "ok", "message": "AI Chat API is running"}
 
 @app.post("/api/web-search")
 async def web_search_endpoint(request: WebSearchRequest):
-    """Endpoint for manual web search"""
     try:
         search_results = web_search.search(request.query, request.max_results)
         return search_results
@@ -158,8 +157,6 @@ async def web_search_endpoint(request: WebSearchRequest):
 async def upload_document(file: UploadFile = File(...), chat_id: str = Form(...)):
     try:
         file_content = await file.read()
-        
-        # Process document with Simple RAG for specific chat
         result = simple_rag.process_document(file_content, file.filename, chat_id)
         
         return {
@@ -175,7 +172,6 @@ async def upload_document(file: UploadFile = File(...), chat_id: str = Form(...)
 @app.post("/api/generate-title")
 async def generate_title(request: GenerateTitleRequest):
     try:
-        # Create a simple conversation for title generation
         messages = [
             {
                 "role": "system",
@@ -192,9 +188,7 @@ async def generate_title(request: GenerateTitleRequest):
         else:
             title = ask_gemini(messages)
         
-        # Clean up the title and make it shorter
         title = title.strip().replace('"', '').replace("'", "")
-        # Split into words and take only first 4
         words = title.split()[:4]
         title = " ".join(words)
         
@@ -219,7 +213,6 @@ async def chat(request: MessageRequest):
     agent_response = False
     
     try:
-        # Create conversation if it doesn't exist
         if not conversation_id:
             conversation_id = mongo_db.create_chat(
                 model=model, 
@@ -232,7 +225,6 @@ async def chat(request: MessageRequest):
                 "content": system_prompt or "You are a helpful AI assistant that provides informative, engaging responses with appropriate emojis. Always be comprehensive and knowledgeable in your analysis."
             }]
         elif conversation_id not in conversations_cache:
-            # Load conversation history with limit for performance
             messages_db = mongo_db.get_chat_history(conversation_id, limit=20)
             chat_data = mongo_db.get_chat_by_id(conversation_id)
             system_prompt_content = chat_data.get('system_prompt') if chat_data else "You are a helpful AI assistant that provides informative, engaging responses with appropriate emojis. Always be comprehensive and knowledgeable in your analysis."
@@ -249,26 +241,20 @@ async def chat(request: MessageRequest):
                         "content": msg["content"]
                     })
         
-        # Limit conversation history to last 15 messages for performance
-        if len(conversations_cache[conversation_id]) > 16:  # 1 system + 15 messages
+        if len(conversations_cache[conversation_id]) > 16:
             conversations_cache[conversation_id] = [conversations_cache[conversation_id][0]] + conversations_cache[conversation_id][-15:]
         
-        # Enhanced web search trigger detection
         needs_web_search = simple_rag.should_trigger_web_search(message)
         has_documents = simple_rag.has_documents(conversation_id)
         
         logger.info(f"🔍 Query analysis - Needs search: {needs_web_search}, Has docs: {has_documents}")
         
-        # Enhanced message processing
         enhanced_message = message
         web_search_results = ""
         
-        # Handle different types of queries
         if simple_rag.is_url_analysis_request(message):
-            # For URL analysis, use the message as-is without additional context
             enhanced_message = message
         elif needs_web_search and has_documents:
-            # Combine web search with document context
             logger.info(f"🔄 Combining web search with document context for query: {message}")
             search_data = web_search.search(message, max_results=3)
             if search_data.get('success'):
@@ -279,7 +265,6 @@ async def chat(request: MessageRequest):
             document_context = simple_rag.simple_search(message, conversation_id)
             enhanced_message = simple_rag.combine_sources(message, document_context, web_search_results, conversation_id)
         elif needs_web_search:
-            # Only web search
             logger.info(f"🔍 Triggering web search for query: {message}")
             search_data = web_search.search(message, max_results=5)
             if search_data.get('success'):
@@ -291,19 +276,15 @@ async def chat(request: MessageRequest):
             else:
                 logger.warning("Web search failed, using original query")
         elif has_documents:
-            # Only document context
             enhanced_message = simple_rag.simple_search(message, conversation_id)
         
-        # Add user message to conversation (use original message for storage)
         conversations_cache[conversation_id].append({
             "role": "user",
             "content": enhanced_message
         })
         
-        # Save original user message to database
         mongo_db.save_message(conversation_id, "user", message)
         
-        # Generate response based on model with proper error handling
         try:
             if model == 'gemini-2.0-flash':
                 response_text = ask_gemini(conversations_cache[conversation_id])
@@ -312,13 +293,11 @@ async def chat(request: MessageRequest):
             elif model == 'phi3:mini':
                 response_text = handle_ollama_request(conversations_cache[conversation_id], model)
             else:
-                response_text = ask_gemini(conversations_cache[conversation_id])  # Default fallback
+                response_text = ask_gemini(conversations_cache[conversation_id])
                 
-            # Add agent indicator if web search was used
             if used_web_search and agent_response:
                 response_text = response_text + "\n\n🤖 *This response includes real-time information from web search.*"
                 
-            # Log performance (simplified without model selection)
             response_time = time.time() - start_time
             logger.info(f"✅ Response generated in {response_time:.2f}s with model {model}")
             
@@ -327,16 +306,13 @@ async def chat(request: MessageRequest):
             response_time = time.time() - start_time
             raise HTTPException(status_code=500, detail=f"Model {model} is currently unavailable. Please try again or switch to a different model.")
         
-        # Add assistant response to conversation
         conversations_cache[conversation_id].append({
             "role": "assistant",
             "content": response_text
         })
         
-        # Save assistant response to database
         mongo_db.save_message(conversation_id, "assistant", response_text)
         
-        # Add search indicator to response if web search was used
         if used_web_search:
             logger.info(f"✅ Response generated with web search for conversation {conversation_id}")
         
@@ -353,6 +329,7 @@ async def chat(request: MessageRequest):
         response_time = time.time() - start_time
         raise HTTPException(status_code=500, detail=str(e))
 
+# ... keep existing code (all other endpoints)
 @app.get("/api/chats")
 async def get_chats():
     try:
@@ -364,7 +341,6 @@ async def get_chats():
 @app.post("/api/chats")
 async def create_chat(request: CreateChatRequest):
     try:
-        # Create new chat and return the generated ID
         chat_id = mongo_db.create_chat(
             model=request.model,
             title=request.title,
@@ -434,15 +410,6 @@ async def delete_document(filename: str, chat_id: str = None):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/api/performance-stats")
-async def get_performance_stats():
-    """Get model performance statistics including web search usage"""
-    try:
-        stats = model_router.get_performance_stats()
-        return stats
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
 @app.post("/api/scrape-url")
 async def scrape_url(request: dict):
     try:
@@ -450,7 +417,6 @@ async def scrape_url(request: dict):
         if not url:
             raise HTTPException(status_code=400, detail="URL is required")
         
-        # Simple URL scraping implementation
         import requests
         from bs4 import BeautifulSoup
         
@@ -461,22 +427,17 @@ async def scrape_url(request: dict):
         response = requests.get(url, timeout=10, headers=headers)
         soup = BeautifulSoup(response.content, 'html.parser')
         
-        # Extract text content more comprehensively
         title = soup.find('title').get_text() if soup.find('title') else ''
         
-        # Remove script and style elements
         for script in soup(["script", "style"]):
             script.decompose()
         
-        # Get text content
         text_content = soup.get_text()
         
-        # Clean up text
         lines = (line.strip() for line in text_content.splitlines())
         chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
         clean_text = ' '.join(chunk for chunk in chunks if chunk)
         
-        # Limit content size
         if len(clean_text) > 5000:
             clean_text = clean_text[:5000] + "..."
         

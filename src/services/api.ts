@@ -1,5 +1,10 @@
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 
-const API_BASE_URL = "http://localhost:8000/api";
+// Mobile detection utility
+const isMobile = () => {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+         window.innerWidth <= 768;
+};
 
 class ApiService {
   async sendMessage(
@@ -9,6 +14,13 @@ class ApiService {
     systemPrompt?: string,
     files?: File[]
   ) {
+    // Check if trying to use Ollama on mobile
+    if (model.includes('phi3') || model.includes('ollama')) {
+      if (isMobile()) {
+        throw new Error("Ollama models are not available on mobile devices. Please use Gemini or Groq models instead.");
+      }
+    }
+
     // If files are provided, upload them first
     if (files && files.length > 0) {
       for (const file of files) {
