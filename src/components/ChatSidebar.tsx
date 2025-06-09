@@ -6,6 +6,7 @@ import { useChat } from "@/contexts/ChatContext";
 import ModelSelector from "./ModelSelector";
 import ChatSidebarItem from "./ChatSidebarItem";
 import ThemeSelector from "./ThemeSelector";
+import ModelInfo from "./ModelInfo";
 import { useSidebarAnimation } from "@/hooks/use-gsap-animations";
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
@@ -92,7 +93,10 @@ export default function ChatSidebar() {
         
         {/* Model Selector */}
         <div className="p-3 border-b border-sidebar-border/30">
-          <h2 className="text-sm font-medium mb-2 truncate">Models</h2>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-sm font-medium truncate">Models</h2>
+            <ModelInfo />
+          </div>
           <ModelSelector />
         </div>
       </div>
