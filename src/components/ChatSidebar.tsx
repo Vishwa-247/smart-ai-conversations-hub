@@ -9,7 +9,6 @@ import ThemeSelector from "./ThemeSelector";
 import { useSidebarAnimation } from "@/hooks/use-gsap-animations";
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
-import ModelInfo from "./ModelInfo";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function ChatSidebar() {
@@ -93,10 +92,7 @@ export default function ChatSidebar() {
         
         {/* Model Selector */}
         <div className="p-3 border-b border-sidebar-border/30">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-sm font-medium truncate">Models</h2>
-            <ModelInfo />
-          </div>
+          <h2 className="text-sm font-medium mb-2 truncate">Models</h2>
           <ModelSelector />
         </div>
       </div>
